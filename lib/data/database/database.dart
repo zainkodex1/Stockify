@@ -50,6 +50,14 @@ class Medicines extends Table {
   TextColumn get manufacturer => text().nullable()();
   TextColumn get description => text().nullable()();
   IntColumn get minStock => integer().withDefault(const Constant(10))(); // Low stock alert level
+  
+  // Added in v8 for generic inventory support
+  TextColumn get brand => text().nullable()();
+  TextColumn get model => text().nullable()();
+  TextColumn get genericName => text().nullable()();
+  TextColumn get strength => text().nullable()();
+  TextColumn get dosageForm => text().nullable()();
+  TextColumn get baseUnitName => text().withDefault(const Constant('Unit'))();
 }
 
 @DataClassName('Batch')
@@ -62,6 +70,17 @@ class Batches extends Table {
   RealColumn get salePrice => real()();
   IntColumn get quantity => integer()(); // Current stock in this batch
   IntColumn get packSize => integer().withDefault(const Constant(1))(); // Added in v7
+}
+
+@DataClassName('ProductUnit')
+class ProductUnits extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get medicineId => integer().references(Medicines, #id)();
+  TextColumn get name => text()();
+  RealColumn get conversionFactor => real().withDefault(const Constant(1.0))();
+  RealColumn get salePrice => real()();
+  BoolColumn get isBaseUnit => boolean().withDefault(const Constant(false))();
+  BoolColumn get isDefaultSaleUnit => boolean().withDefault(const Constant(false))();
 }
 
 // --- Customer Tables ---
@@ -99,14 +118,16 @@ class SaleItems extends Table {
   IntColumn get quantity => integer()();
   RealColumn get price => real()(); // Price at moment of sale
   RealColumn get total => real()();
+  TextColumn get unitName => text().nullable()(); // Added in v9
+  RealColumn get conversionFactor => real().withDefault(const Constant(1.0))(); // Added in v9
 }
 
-@DriftDatabase(tables: [Users, Settings, Categories, Medicines, Batches, Customers, Sales, SaleItems])
+@DriftDatabase(tables: [Users, Settings, Categories, Medicines, Batches, ProductUnits, Customers, Sales, SaleItems])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7; // Changed to 7
+  int get schemaVersion => 9; // Updated to 9
 
   @override
   MigrationStrategy get migration {
@@ -138,10 +159,35 @@ class AppDatabase extends _$AppDatabase {
           } catch (e) { /* ignore */ }
         }
         if (from < 7) {
-          // Add packSize to Batches
           try {
             await m.addColumn(batches, batches.packSize);
           } catch (e) { /* ignore */ }
+        }
+        if (from < 8) {
+          // 1. Create the new units table
+          await m.createTable(productUnits);
+          
+          // 2. Add columns to medicines
+          await m.addColumn(medicines, medicines.brand);
+          await m.addColumn(medicines, medicines.model);
+          await m.addColumn(medicines, medicines.genericName);
+          await m.addColumn(medicines, medicines.strength);
+          await m.addColumn(medicines, medicines.dosageForm);
+          await m.addColumn(medicines, medicines.baseUnitName);
+
+          // 3. Data Migration: Create default units for existing products
+          // We use customStatement to avoid dependency on the latest Dart classes during migration
+          await customStatement('''
+            INSERT INTO product_units (medicine_id, name, conversion_factor, sale_price, is_base_unit, is_default_sale_unit)
+            SELECT m.id, 'Unit', 1.0, 
+                   IFNULL((SELECT b.sale_price FROM batches b WHERE b.medicine_id = m.id ORDER BY b.id DESC LIMIT 1), 0.0),
+                   1, 1
+            FROM medicines m;
+          ''');
+        }
+        if (from < 9) {
+          await m.addColumn(saleItems, saleItems.unitName);
+          await m.addColumn(saleItems, saleItems.conversionFactor);
         }
       },
     );

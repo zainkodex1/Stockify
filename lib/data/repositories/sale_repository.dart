@@ -16,13 +16,15 @@ class SaleRepository {
     return _db.transaction(() async {
       final saleId = await _db.into(_db.sales).insert(sale);
       for (var item in items) {
-        // Deduct stock
+        // Deduct stock using conversion factor
         final batchId = item.batchId.value;
         final qty = item.quantity.value;
+        final factor = item.conversionFactor.value;
+        final baseQtyToDeduct = (qty * factor).toInt();
         
         final batch = await (_db.select(_db.batches)..where((t) => t.id.equals(batchId))).getSingle();
         await (_db.update(_db.batches)..where((t) => t.id.equals(batchId))).write(BatchesCompanion(
-          quantity: Value(batch.quantity - qty),
+          quantity: Value(batch.quantity - baseQtyToDeduct),
         ));
 
         await _db.into(_db.saleItems).insert(item.copyWith(saleId: Value(saleId)));

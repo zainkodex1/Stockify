@@ -12,7 +12,7 @@ import '../../data/database/database.dart';
 import '../shared/app_theme.dart';
 import 'category_management_screen.dart';
 import 'pos_settings_screen.dart';
-import 'product_form_settings_screen.dart';
+import 'inventory_flow_settings_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -189,11 +189,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosSettingsScreen())),
             ),
             _buildClickableSetting(
-              title: 'Dynamic Entry Form',
-              subtitle: 'Toggle visibility of product input fields',
+              title: 'Inventory Flow Control',
+              subtitle: 'Business presets and dynamic field visibility',
               icon: Icons.edit_note_rounded,
               color: AppTheme.tealAccent,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductFormSettingsScreen())),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InventoryFlowSettingsScreen())),
             ),
 
             const SizedBox(height: 40),

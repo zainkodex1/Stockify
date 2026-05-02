@@ -19,6 +19,7 @@ class PosHeader extends ConsumerWidget {
     required this.onSelectCustomer,
     required this.onNewCustomer,
     required this.searchQuery,
+    required this.productSearchController,
     required this.productSearchFocus,
     required this.onSearchChanged,
     required this.onClearSearch,
@@ -35,6 +36,7 @@ class PosHeader extends ConsumerWidget {
   final ValueChanged<Customer> onSelectCustomer;
   final Function([String? name]) onNewCustomer;
   final String searchQuery;
+  final TextEditingController productSearchController;
   final FocusNode productSearchFocus;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onClearSearch;
@@ -64,7 +66,7 @@ class PosHeader extends ConsumerWidget {
           onSearchCustomer: onSearchCustomers,
           onSelectCustomer: onSelectCustomer,
           onNewCustomer: onNewCustomer,
-          productQuery: searchQuery,
+          productController: productSearchController,
           productFocus: productSearchFocus,
           onProductSearchChanged: onSearchChanged,
           onClearProduct: onClearSearch,
@@ -185,7 +187,7 @@ class _ControlBox extends StatefulWidget {
     required this.onSearchCustomer,
     required this.onSelectCustomer,
     required this.onNewCustomer,
-    required this.productQuery,
+    required this.productController,
     required this.productFocus,
     required this.onProductSearchChanged,
     required this.onClearProduct,
@@ -199,7 +201,7 @@ class _ControlBox extends StatefulWidget {
   final ValueChanged<String> onSearchCustomer;
   final ValueChanged<Customer> onSelectCustomer;
   final Function([String? name]) onNewCustomer;
-  final String productQuery;
+  final TextEditingController productController;
   final FocusNode productFocus;
   final ValueChanged<String> onProductSearchChanged;
   final VoidCallback onClearProduct;
@@ -211,7 +213,14 @@ class _ControlBox extends StatefulWidget {
 
 class _ControlBoxState extends State<_ControlBox> {
   final LayerLink _layerLink = LayerLink();
+  final FocusNode _keyboardFocusNode = FocusNode();
   int _highlightedIndex = -1;
+
+  @override
+  void dispose() {
+    _keyboardFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(covariant _ControlBox oldWidget) {
@@ -256,8 +265,8 @@ class _ControlBoxState extends State<_ControlBox> {
         color: Colors.white,
         border: Border(bottom: BorderSide(color: AppTheme.border)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
           Container(
             decoration: BoxDecoration(
@@ -275,7 +284,7 @@ class _ControlBoxState extends State<_ControlBox> {
                     CompositedTransformTarget(
                       link: _layerLink,
                       child: RawKeyboardListener(
-                        focusNode: FocusNode(),
+                        focusNode: _keyboardFocusNode,
                         onKey: _handleKey,
                         child: _MiniField(
                           icon: Icons.person_search_rounded,
@@ -301,7 +310,7 @@ class _ControlBoxState extends State<_ControlBox> {
                         Expanded(
                           child: _MiniField(
                             icon: Icons.search_rounded,
-                            controller: TextEditingController(text: widget.productQuery)..selection = TextSelection.fromPosition(TextPosition(offset: widget.productQuery.length)),
+                            controller: widget.productController,
                             focusNode: widget.productFocus,
                             hint: 'Search products (F3)...',
                             onChanged: widget.onProductSearchChanged,
@@ -319,7 +328,7 @@ class _ControlBoxState extends State<_ControlBox> {
                       child: CompositedTransformTarget(
                         link: _layerLink,
                         child: RawKeyboardListener(
-                          focusNode: FocusNode(),
+                          focusNode: _keyboardFocusNode,
                           onKey: _handleKey,
                           child: _MiniField(
                             icon: Icons.person_search_rounded,
@@ -345,7 +354,7 @@ class _ControlBoxState extends State<_ControlBox> {
                       flex: 5,
                       child: _MiniField(
                         icon: Icons.search_rounded,
-                        controller: TextEditingController(text: widget.productQuery)..selection = TextSelection.fromPosition(TextPosition(offset: widget.productQuery.length)),
+                        controller: widget.productController,
                         focusNode: widget.productFocus,
                         hint: 'Search products / SKU / barcode (F3)...',
                         onChanged: widget.onProductSearchChanged,
@@ -358,27 +367,31 @@ class _ControlBoxState extends State<_ControlBox> {
           ),
           
           if (widget.customerFocus.hasFocus && (widget.customerResults.isNotEmpty || (widget.customerController.text.length > 1 && widget.customerController.text != 'Walk-in Customer')))
-            CompositedTransformFollower(
-              link: _layerLink,
-              showWhenUnlinked: false,
-              offset: const Offset(0, 42),
-              child: Material(
-                elevation: 12,
-                borderRadius: BorderRadius.circular(AppTheme.r12),
-                color: Colors.white,
-                child: Container(
-                  width: 320,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppTheme.r12),
-                    border: Border.all(color: AppTheme.border),
+            Positioned(
+              top: 42,
+              left: 0,
+              child: CompositedTransformFollower(
+                link: _layerLink,
+                showWhenUnlinked: false,
+                offset: const Offset(0, 0),
+                child: Material(
+                  elevation: 12,
+                  borderRadius: BorderRadius.circular(AppTheme.r12),
+                  color: Colors.white,
+                  child: Container(
+                    width: 320,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppTheme.r12),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: widget.customerResults.isNotEmpty 
+                      ? _SuggestionList(
+                          results: widget.customerResults, 
+                          onSelect: widget.onSelectCustomer,
+                          highlightedIndex: _highlightedIndex,
+                        )
+                      : _NoResultBox(typedName: widget.customerController.text, onAdd: widget.onNewCustomer),
                   ),
-                  child: widget.customerResults.isNotEmpty 
-                    ? _SuggestionList(
-                        results: widget.customerResults, 
-                        onSelect: widget.onSelectCustomer,
-                        highlightedIndex: _highlightedIndex,
-                      )
-                    : _NoResultBox(typedName: widget.customerController.text, onAdd: widget.onNewCustomer),
                 ),
               ),
             ),

@@ -14,7 +14,21 @@ class MedicineRepository {
   
   Future<int> addMedicine(MedicinesCompanion medicine) => _db.into(_db.medicines).insert(medicine);
   Future<bool> updateMedicine(Medicine medicine) => _db.update(_db.medicines).replace(medicine);
+  
+  Future<int> upsertMedicine(MedicinesCompanion medicine) async {
+    return _db.into(_db.medicines).insertOnConflictUpdate(medicine);
+  }
+
   Future<int> deleteMedicine(int id) => (_db.delete(_db.medicines)..where((t) => t.id.equals(id))).go();
+
+  // Units
+  Future<List<ProductUnit>> getProductUnits(int medicineId) => 
+      (_db.select(_db.productUnits)..where((t) => t.medicineId.equals(medicineId))).get();
+
+  Future<int> addProductUnit(ProductUnitsCompanion unit) => _db.into(_db.productUnits).insert(unit);
+
+  Future<void> deleteProductUnits(int medicineId) => 
+      (_db.delete(_db.productUnits)..where((t) => t.medicineId.equals(medicineId))).go();
 
   // Batches
   Future<List<Batch>> getBatchesForMedicine(int medicineId) => 

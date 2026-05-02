@@ -186,9 +186,19 @@ class SalePdfGenerator {
                             pw.SizedBox(width: 18, child: pw.Text('${index + 1}.', style: const pw.TextStyle(fontSize: 9))),
                             pw.Expanded(
                               flex: 5, 
-                              child: pw.Text(
-                                medicine?.name ?? 'Item', 
-                                style: const pw.TextStyle(fontSize: 9),
+                              child: pw.Column(
+                                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                children: [
+                                  pw.Text(
+                                    medicine?.name ?? 'Item', 
+                                    style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                                  ),
+                                  if (item.unitName != null)
+                                    pw.Text(
+                                      'Unit: ${item.unitName}', 
+                                      style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700),
+                                    ),
+                                ],
                               ),
                             ),
                             pw.SizedBox(width: 28, child: pw.Text('${item.quantity}', style: const pw.TextStyle(fontSize: 9), textAlign: pw.TextAlign.center)),

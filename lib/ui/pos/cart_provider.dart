@@ -5,29 +5,34 @@ import '../../data/providers/current_shop_provider.dart';
 class CartItem {
   final Medicine medicine;
   final Batch batch;
+  final ProductUnit selectedUnit;
   final int quantity;
-  final int originalStock; // Stock available when item was added (for warning display)
+  final int originalStock; // Total base units available
 
   const CartItem({
     required this.medicine,
     required this.batch,
+    required this.selectedUnit,
     this.quantity = 1,
     this.originalStock = 0,
   });
 
-  double get total => batch.salePrice * quantity;
+  double get total => selectedUnit.salePrice * quantity;
   
-  /// Returns true if quantity exceeds original available stock
-  /// Only shows warning if stock was actually tracked (originalStock > 0)
-  bool get hasStockWarning => originalStock > 0 && quantity > originalStock;
-  
-  /// Returns the shortage amount (0 if no shortage or stock not tracked)
-  int get shortage => originalStock > 0 ? quantity - originalStock : 0;
+  /// Returns the total quantity in base units
+  double get quantityInBaseUnits => quantity * selectedUnit.conversionFactor;
 
-  CartItem copyWith({int? quantity, int? originalStock}) {
+  /// Returns true if total base units exceed original available stock
+  bool get hasStockWarning => originalStock > 0 && quantityInBaseUnits > originalStock;
+  
+  /// Returns the shortage in base units
+  double get shortage => originalStock > 0 ? quantityInBaseUnits - originalStock : 0;
+
+  CartItem copyWith({int? quantity, int? originalStock, ProductUnit? selectedUnit}) {
     return CartItem(
       medicine: medicine,
       batch: batch,
+      selectedUnit: selectedUnit ?? this.selectedUnit,
       quantity: quantity ?? this.quantity,
       originalStock: originalStock ?? this.originalStock,
     );
@@ -162,8 +167,8 @@ class CartNotifier extends Notifier<CartState> {
     );
   }
 
-  void addItem(Medicine medicine, Batch batch, {int totalBatchStock = 0}) {
-    final existingIndex = state.items.indexWhere((i) => i.batch.id == batch.id);
+  void addItem(Medicine medicine, Batch batch, ProductUnit unit, {int totalBatchStock = 0}) {
+    final existingIndex = state.items.indexWhere((i) => i.batch.id == batch.id && i.selectedUnit.id == unit.id);
     if (existingIndex >= 0) {
       final newItems = List<CartItem>.from(state.items);
       newItems[existingIndex] = newItems[existingIndex].copyWith(
@@ -176,6 +181,7 @@ class CartNotifier extends Notifier<CartState> {
         CartItem(
           medicine: medicine,
           batch: batch,
+          selectedUnit: unit,
           quantity: 1,
           originalStock: totalBatchStock,
         ),
@@ -183,17 +189,17 @@ class CartNotifier extends Notifier<CartState> {
     }
   }
 
-  void removeItem(int batchId) {
-    state = state.copyWith(items: state.items.where((i) => i.batch.id != batchId).toList());
+  void removeItem(int batchId, {int? unitId}) {
+    state = state.copyWith(items: state.items.where((i) => unitId != null ? (i.batch.id != batchId || i.selectedUnit.id != unitId) : i.batch.id != batchId).toList());
   }
 
-  void updateQuantity(int batchId, int quantity) {
+  void updateQuantity(int batchId, int quantity, {int? unitId}) {
     if (quantity <= 0) {
-      removeItem(batchId);
+      removeItem(batchId, unitId: unitId);
       return;
     }
     final newItems = state.items.map((item) {
-      if (item.batch.id == batchId) {
+      if (item.batch.id == batchId && (unitId == null || item.selectedUnit.id == unitId)) {
         return item.copyWith(quantity: quantity);
       }
       return item;

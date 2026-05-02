@@ -1063,6 +1063,69 @@ class $MedicinesTable extends Medicines
     requiredDuringInsert: false,
     defaultValue: const Constant(10),
   );
+  static const VerificationMeta _brandMeta = const VerificationMeta('brand');
+  @override
+  late final GeneratedColumn<String> brand = GeneratedColumn<String>(
+    'brand',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _genericNameMeta = const VerificationMeta(
+    'genericName',
+  );
+  @override
+  late final GeneratedColumn<String> genericName = GeneratedColumn<String>(
+    'generic_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _strengthMeta = const VerificationMeta(
+    'strength',
+  );
+  @override
+  late final GeneratedColumn<String> strength = GeneratedColumn<String>(
+    'strength',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dosageFormMeta = const VerificationMeta(
+    'dosageForm',
+  );
+  @override
+  late final GeneratedColumn<String> dosageForm = GeneratedColumn<String>(
+    'dosage_form',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _baseUnitNameMeta = const VerificationMeta(
+    'baseUnitName',
+  );
+  @override
+  late final GeneratedColumn<String> baseUnitName = GeneratedColumn<String>(
+    'base_unit_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('Unit'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1073,6 +1136,12 @@ class $MedicinesTable extends Medicines
     manufacturer,
     description,
     minStock,
+    brand,
+    model,
+    genericName,
+    strength,
+    dosageForm,
+    baseUnitName,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1147,6 +1216,48 @@ class $MedicinesTable extends Medicines
         minStock.isAcceptableOrUnknown(data['min_stock']!, _minStockMeta),
       );
     }
+    if (data.containsKey('brand')) {
+      context.handle(
+        _brandMeta,
+        brand.isAcceptableOrUnknown(data['brand']!, _brandMeta),
+      );
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+        _modelMeta,
+        model.isAcceptableOrUnknown(data['model']!, _modelMeta),
+      );
+    }
+    if (data.containsKey('generic_name')) {
+      context.handle(
+        _genericNameMeta,
+        genericName.isAcceptableOrUnknown(
+          data['generic_name']!,
+          _genericNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('strength')) {
+      context.handle(
+        _strengthMeta,
+        strength.isAcceptableOrUnknown(data['strength']!, _strengthMeta),
+      );
+    }
+    if (data.containsKey('dosage_form')) {
+      context.handle(
+        _dosageFormMeta,
+        dosageForm.isAcceptableOrUnknown(data['dosage_form']!, _dosageFormMeta),
+      );
+    }
+    if (data.containsKey('base_unit_name')) {
+      context.handle(
+        _baseUnitNameMeta,
+        baseUnitName.isAcceptableOrUnknown(
+          data['base_unit_name']!,
+          _baseUnitNameMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1188,6 +1299,30 @@ class $MedicinesTable extends Medicines
         DriftSqlType.int,
         data['${effectivePrefix}min_stock'],
       )!,
+      brand: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brand'],
+      ),
+      model: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model'],
+      ),
+      genericName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}generic_name'],
+      ),
+      strength: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strength'],
+      ),
+      dosageForm: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dosage_form'],
+      ),
+      baseUnitName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}base_unit_name'],
+      )!,
     );
   }
 
@@ -1206,6 +1341,12 @@ class Medicine extends DataClass implements Insertable<Medicine> {
   final String? manufacturer;
   final String? description;
   final int minStock;
+  final String? brand;
+  final String? model;
+  final String? genericName;
+  final String? strength;
+  final String? dosageForm;
+  final String baseUnitName;
   const Medicine({
     required this.id,
     required this.name,
@@ -1215,6 +1356,12 @@ class Medicine extends DataClass implements Insertable<Medicine> {
     this.manufacturer,
     this.description,
     required this.minStock,
+    this.brand,
+    this.model,
+    this.genericName,
+    this.strength,
+    this.dosageForm,
+    required this.baseUnitName,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1233,6 +1380,22 @@ class Medicine extends DataClass implements Insertable<Medicine> {
       map['description'] = Variable<String>(description);
     }
     map['min_stock'] = Variable<int>(minStock);
+    if (!nullToAbsent || brand != null) {
+      map['brand'] = Variable<String>(brand);
+    }
+    if (!nullToAbsent || model != null) {
+      map['model'] = Variable<String>(model);
+    }
+    if (!nullToAbsent || genericName != null) {
+      map['generic_name'] = Variable<String>(genericName);
+    }
+    if (!nullToAbsent || strength != null) {
+      map['strength'] = Variable<String>(strength);
+    }
+    if (!nullToAbsent || dosageForm != null) {
+      map['dosage_form'] = Variable<String>(dosageForm);
+    }
+    map['base_unit_name'] = Variable<String>(baseUnitName);
     return map;
   }
 
@@ -1252,6 +1415,22 @@ class Medicine extends DataClass implements Insertable<Medicine> {
           ? const Value.absent()
           : Value(description),
       minStock: Value(minStock),
+      brand: brand == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brand),
+      model: model == null && nullToAbsent
+          ? const Value.absent()
+          : Value(model),
+      genericName: genericName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(genericName),
+      strength: strength == null && nullToAbsent
+          ? const Value.absent()
+          : Value(strength),
+      dosageForm: dosageForm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dosageForm),
+      baseUnitName: Value(baseUnitName),
     );
   }
 
@@ -1269,6 +1448,12 @@ class Medicine extends DataClass implements Insertable<Medicine> {
       manufacturer: serializer.fromJson<String?>(json['manufacturer']),
       description: serializer.fromJson<String?>(json['description']),
       minStock: serializer.fromJson<int>(json['minStock']),
+      brand: serializer.fromJson<String?>(json['brand']),
+      model: serializer.fromJson<String?>(json['model']),
+      genericName: serializer.fromJson<String?>(json['genericName']),
+      strength: serializer.fromJson<String?>(json['strength']),
+      dosageForm: serializer.fromJson<String?>(json['dosageForm']),
+      baseUnitName: serializer.fromJson<String>(json['baseUnitName']),
     );
   }
   @override
@@ -1283,6 +1468,12 @@ class Medicine extends DataClass implements Insertable<Medicine> {
       'manufacturer': serializer.toJson<String?>(manufacturer),
       'description': serializer.toJson<String?>(description),
       'minStock': serializer.toJson<int>(minStock),
+      'brand': serializer.toJson<String?>(brand),
+      'model': serializer.toJson<String?>(model),
+      'genericName': serializer.toJson<String?>(genericName),
+      'strength': serializer.toJson<String?>(strength),
+      'dosageForm': serializer.toJson<String?>(dosageForm),
+      'baseUnitName': serializer.toJson<String>(baseUnitName),
     };
   }
 
@@ -1295,6 +1486,12 @@ class Medicine extends DataClass implements Insertable<Medicine> {
     Value<String?> manufacturer = const Value.absent(),
     Value<String?> description = const Value.absent(),
     int? minStock,
+    Value<String?> brand = const Value.absent(),
+    Value<String?> model = const Value.absent(),
+    Value<String?> genericName = const Value.absent(),
+    Value<String?> strength = const Value.absent(),
+    Value<String?> dosageForm = const Value.absent(),
+    String? baseUnitName,
   }) => Medicine(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -1304,6 +1501,12 @@ class Medicine extends DataClass implements Insertable<Medicine> {
     manufacturer: manufacturer.present ? manufacturer.value : this.manufacturer,
     description: description.present ? description.value : this.description,
     minStock: minStock ?? this.minStock,
+    brand: brand.present ? brand.value : this.brand,
+    model: model.present ? model.value : this.model,
+    genericName: genericName.present ? genericName.value : this.genericName,
+    strength: strength.present ? strength.value : this.strength,
+    dosageForm: dosageForm.present ? dosageForm.value : this.dosageForm,
+    baseUnitName: baseUnitName ?? this.baseUnitName,
   );
   Medicine copyWithCompanion(MedicinesCompanion data) {
     return Medicine(
@@ -1323,6 +1526,18 @@ class Medicine extends DataClass implements Insertable<Medicine> {
           ? data.description.value
           : this.description,
       minStock: data.minStock.present ? data.minStock.value : this.minStock,
+      brand: data.brand.present ? data.brand.value : this.brand,
+      model: data.model.present ? data.model.value : this.model,
+      genericName: data.genericName.present
+          ? data.genericName.value
+          : this.genericName,
+      strength: data.strength.present ? data.strength.value : this.strength,
+      dosageForm: data.dosageForm.present
+          ? data.dosageForm.value
+          : this.dosageForm,
+      baseUnitName: data.baseUnitName.present
+          ? data.baseUnitName.value
+          : this.baseUnitName,
     );
   }
 
@@ -1336,7 +1551,13 @@ class Medicine extends DataClass implements Insertable<Medicine> {
           ..write('subCategory: $subCategory, ')
           ..write('manufacturer: $manufacturer, ')
           ..write('description: $description, ')
-          ..write('minStock: $minStock')
+          ..write('minStock: $minStock, ')
+          ..write('brand: $brand, ')
+          ..write('model: $model, ')
+          ..write('genericName: $genericName, ')
+          ..write('strength: $strength, ')
+          ..write('dosageForm: $dosageForm, ')
+          ..write('baseUnitName: $baseUnitName')
           ..write(')'))
         .toString();
   }
@@ -1351,6 +1572,12 @@ class Medicine extends DataClass implements Insertable<Medicine> {
     manufacturer,
     description,
     minStock,
+    brand,
+    model,
+    genericName,
+    strength,
+    dosageForm,
+    baseUnitName,
   );
   @override
   bool operator ==(Object other) =>
@@ -1363,7 +1590,13 @@ class Medicine extends DataClass implements Insertable<Medicine> {
           other.subCategory == this.subCategory &&
           other.manufacturer == this.manufacturer &&
           other.description == this.description &&
-          other.minStock == this.minStock);
+          other.minStock == this.minStock &&
+          other.brand == this.brand &&
+          other.model == this.model &&
+          other.genericName == this.genericName &&
+          other.strength == this.strength &&
+          other.dosageForm == this.dosageForm &&
+          other.baseUnitName == this.baseUnitName);
 }
 
 class MedicinesCompanion extends UpdateCompanion<Medicine> {
@@ -1375,6 +1608,12 @@ class MedicinesCompanion extends UpdateCompanion<Medicine> {
   final Value<String?> manufacturer;
   final Value<String?> description;
   final Value<int> minStock;
+  final Value<String?> brand;
+  final Value<String?> model;
+  final Value<String?> genericName;
+  final Value<String?> strength;
+  final Value<String?> dosageForm;
+  final Value<String> baseUnitName;
   const MedicinesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -1384,6 +1623,12 @@ class MedicinesCompanion extends UpdateCompanion<Medicine> {
     this.manufacturer = const Value.absent(),
     this.description = const Value.absent(),
     this.minStock = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.model = const Value.absent(),
+    this.genericName = const Value.absent(),
+    this.strength = const Value.absent(),
+    this.dosageForm = const Value.absent(),
+    this.baseUnitName = const Value.absent(),
   });
   MedicinesCompanion.insert({
     this.id = const Value.absent(),
@@ -1394,6 +1639,12 @@ class MedicinesCompanion extends UpdateCompanion<Medicine> {
     this.manufacturer = const Value.absent(),
     this.description = const Value.absent(),
     this.minStock = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.model = const Value.absent(),
+    this.genericName = const Value.absent(),
+    this.strength = const Value.absent(),
+    this.dosageForm = const Value.absent(),
+    this.baseUnitName = const Value.absent(),
   }) : name = Value(name),
        code = Value(code);
   static Insertable<Medicine> custom({
@@ -1405,6 +1656,12 @@ class MedicinesCompanion extends UpdateCompanion<Medicine> {
     Expression<String>? manufacturer,
     Expression<String>? description,
     Expression<int>? minStock,
+    Expression<String>? brand,
+    Expression<String>? model,
+    Expression<String>? genericName,
+    Expression<String>? strength,
+    Expression<String>? dosageForm,
+    Expression<String>? baseUnitName,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1415,6 +1672,12 @@ class MedicinesCompanion extends UpdateCompanion<Medicine> {
       if (manufacturer != null) 'manufacturer': manufacturer,
       if (description != null) 'description': description,
       if (minStock != null) 'min_stock': minStock,
+      if (brand != null) 'brand': brand,
+      if (model != null) 'model': model,
+      if (genericName != null) 'generic_name': genericName,
+      if (strength != null) 'strength': strength,
+      if (dosageForm != null) 'dosage_form': dosageForm,
+      if (baseUnitName != null) 'base_unit_name': baseUnitName,
     });
   }
 
@@ -1427,6 +1690,12 @@ class MedicinesCompanion extends UpdateCompanion<Medicine> {
     Value<String?>? manufacturer,
     Value<String?>? description,
     Value<int>? minStock,
+    Value<String?>? brand,
+    Value<String?>? model,
+    Value<String?>? genericName,
+    Value<String?>? strength,
+    Value<String?>? dosageForm,
+    Value<String>? baseUnitName,
   }) {
     return MedicinesCompanion(
       id: id ?? this.id,
@@ -1437,6 +1706,12 @@ class MedicinesCompanion extends UpdateCompanion<Medicine> {
       manufacturer: manufacturer ?? this.manufacturer,
       description: description ?? this.description,
       minStock: minStock ?? this.minStock,
+      brand: brand ?? this.brand,
+      model: model ?? this.model,
+      genericName: genericName ?? this.genericName,
+      strength: strength ?? this.strength,
+      dosageForm: dosageForm ?? this.dosageForm,
+      baseUnitName: baseUnitName ?? this.baseUnitName,
     );
   }
 
@@ -1467,6 +1742,24 @@ class MedicinesCompanion extends UpdateCompanion<Medicine> {
     if (minStock.present) {
       map['min_stock'] = Variable<int>(minStock.value);
     }
+    if (brand.present) {
+      map['brand'] = Variable<String>(brand.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (genericName.present) {
+      map['generic_name'] = Variable<String>(genericName.value);
+    }
+    if (strength.present) {
+      map['strength'] = Variable<String>(strength.value);
+    }
+    if (dosageForm.present) {
+      map['dosage_form'] = Variable<String>(dosageForm.value);
+    }
+    if (baseUnitName.present) {
+      map['base_unit_name'] = Variable<String>(baseUnitName.value);
+    }
     return map;
   }
 
@@ -1480,7 +1773,13 @@ class MedicinesCompanion extends UpdateCompanion<Medicine> {
           ..write('subCategory: $subCategory, ')
           ..write('manufacturer: $manufacturer, ')
           ..write('description: $description, ')
-          ..write('minStock: $minStock')
+          ..write('minStock: $minStock, ')
+          ..write('brand: $brand, ')
+          ..write('model: $model, ')
+          ..write('genericName: $genericName, ')
+          ..write('strength: $strength, ')
+          ..write('dosageForm: $dosageForm, ')
+          ..write('baseUnitName: $baseUnitName')
           ..write(')'))
         .toString();
   }
@@ -1997,6 +2296,478 @@ class BatchesCompanion extends UpdateCompanion<Batch> {
           ..write('salePrice: $salePrice, ')
           ..write('quantity: $quantity, ')
           ..write('packSize: $packSize')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProductUnitsTable extends ProductUnits
+    with TableInfo<$ProductUnitsTable, ProductUnit> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProductUnitsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _medicineIdMeta = const VerificationMeta(
+    'medicineId',
+  );
+  @override
+  late final GeneratedColumn<int> medicineId = GeneratedColumn<int>(
+    'medicine_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES medicines (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _conversionFactorMeta = const VerificationMeta(
+    'conversionFactor',
+  );
+  @override
+  late final GeneratedColumn<double> conversionFactor = GeneratedColumn<double>(
+    'conversion_factor',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
+  static const VerificationMeta _salePriceMeta = const VerificationMeta(
+    'salePrice',
+  );
+  @override
+  late final GeneratedColumn<double> salePrice = GeneratedColumn<double>(
+    'sale_price',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isBaseUnitMeta = const VerificationMeta(
+    'isBaseUnit',
+  );
+  @override
+  late final GeneratedColumn<bool> isBaseUnit = GeneratedColumn<bool>(
+    'is_base_unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_base_unit" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isDefaultSaleUnitMeta = const VerificationMeta(
+    'isDefaultSaleUnit',
+  );
+  @override
+  late final GeneratedColumn<bool> isDefaultSaleUnit = GeneratedColumn<bool>(
+    'is_default_sale_unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_default_sale_unit" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    medicineId,
+    name,
+    conversionFactor,
+    salePrice,
+    isBaseUnit,
+    isDefaultSaleUnit,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'product_units';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProductUnit> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('medicine_id')) {
+      context.handle(
+        _medicineIdMeta,
+        medicineId.isAcceptableOrUnknown(data['medicine_id']!, _medicineIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_medicineIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('conversion_factor')) {
+      context.handle(
+        _conversionFactorMeta,
+        conversionFactor.isAcceptableOrUnknown(
+          data['conversion_factor']!,
+          _conversionFactorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sale_price')) {
+      context.handle(
+        _salePriceMeta,
+        salePrice.isAcceptableOrUnknown(data['sale_price']!, _salePriceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_salePriceMeta);
+    }
+    if (data.containsKey('is_base_unit')) {
+      context.handle(
+        _isBaseUnitMeta,
+        isBaseUnit.isAcceptableOrUnknown(
+          data['is_base_unit']!,
+          _isBaseUnitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_default_sale_unit')) {
+      context.handle(
+        _isDefaultSaleUnitMeta,
+        isDefaultSaleUnit.isAcceptableOrUnknown(
+          data['is_default_sale_unit']!,
+          _isDefaultSaleUnitMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProductUnit map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProductUnit(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      medicineId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}medicine_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      conversionFactor: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}conversion_factor'],
+      )!,
+      salePrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sale_price'],
+      )!,
+      isBaseUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_base_unit'],
+      )!,
+      isDefaultSaleUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_default_sale_unit'],
+      )!,
+    );
+  }
+
+  @override
+  $ProductUnitsTable createAlias(String alias) {
+    return $ProductUnitsTable(attachedDatabase, alias);
+  }
+}
+
+class ProductUnit extends DataClass implements Insertable<ProductUnit> {
+  final int id;
+  final int medicineId;
+  final String name;
+  final double conversionFactor;
+  final double salePrice;
+  final bool isBaseUnit;
+  final bool isDefaultSaleUnit;
+  const ProductUnit({
+    required this.id,
+    required this.medicineId,
+    required this.name,
+    required this.conversionFactor,
+    required this.salePrice,
+    required this.isBaseUnit,
+    required this.isDefaultSaleUnit,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['medicine_id'] = Variable<int>(medicineId);
+    map['name'] = Variable<String>(name);
+    map['conversion_factor'] = Variable<double>(conversionFactor);
+    map['sale_price'] = Variable<double>(salePrice);
+    map['is_base_unit'] = Variable<bool>(isBaseUnit);
+    map['is_default_sale_unit'] = Variable<bool>(isDefaultSaleUnit);
+    return map;
+  }
+
+  ProductUnitsCompanion toCompanion(bool nullToAbsent) {
+    return ProductUnitsCompanion(
+      id: Value(id),
+      medicineId: Value(medicineId),
+      name: Value(name),
+      conversionFactor: Value(conversionFactor),
+      salePrice: Value(salePrice),
+      isBaseUnit: Value(isBaseUnit),
+      isDefaultSaleUnit: Value(isDefaultSaleUnit),
+    );
+  }
+
+  factory ProductUnit.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProductUnit(
+      id: serializer.fromJson<int>(json['id']),
+      medicineId: serializer.fromJson<int>(json['medicineId']),
+      name: serializer.fromJson<String>(json['name']),
+      conversionFactor: serializer.fromJson<double>(json['conversionFactor']),
+      salePrice: serializer.fromJson<double>(json['salePrice']),
+      isBaseUnit: serializer.fromJson<bool>(json['isBaseUnit']),
+      isDefaultSaleUnit: serializer.fromJson<bool>(json['isDefaultSaleUnit']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'medicineId': serializer.toJson<int>(medicineId),
+      'name': serializer.toJson<String>(name),
+      'conversionFactor': serializer.toJson<double>(conversionFactor),
+      'salePrice': serializer.toJson<double>(salePrice),
+      'isBaseUnit': serializer.toJson<bool>(isBaseUnit),
+      'isDefaultSaleUnit': serializer.toJson<bool>(isDefaultSaleUnit),
+    };
+  }
+
+  ProductUnit copyWith({
+    int? id,
+    int? medicineId,
+    String? name,
+    double? conversionFactor,
+    double? salePrice,
+    bool? isBaseUnit,
+    bool? isDefaultSaleUnit,
+  }) => ProductUnit(
+    id: id ?? this.id,
+    medicineId: medicineId ?? this.medicineId,
+    name: name ?? this.name,
+    conversionFactor: conversionFactor ?? this.conversionFactor,
+    salePrice: salePrice ?? this.salePrice,
+    isBaseUnit: isBaseUnit ?? this.isBaseUnit,
+    isDefaultSaleUnit: isDefaultSaleUnit ?? this.isDefaultSaleUnit,
+  );
+  ProductUnit copyWithCompanion(ProductUnitsCompanion data) {
+    return ProductUnit(
+      id: data.id.present ? data.id.value : this.id,
+      medicineId: data.medicineId.present
+          ? data.medicineId.value
+          : this.medicineId,
+      name: data.name.present ? data.name.value : this.name,
+      conversionFactor: data.conversionFactor.present
+          ? data.conversionFactor.value
+          : this.conversionFactor,
+      salePrice: data.salePrice.present ? data.salePrice.value : this.salePrice,
+      isBaseUnit: data.isBaseUnit.present
+          ? data.isBaseUnit.value
+          : this.isBaseUnit,
+      isDefaultSaleUnit: data.isDefaultSaleUnit.present
+          ? data.isDefaultSaleUnit.value
+          : this.isDefaultSaleUnit,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProductUnit(')
+          ..write('id: $id, ')
+          ..write('medicineId: $medicineId, ')
+          ..write('name: $name, ')
+          ..write('conversionFactor: $conversionFactor, ')
+          ..write('salePrice: $salePrice, ')
+          ..write('isBaseUnit: $isBaseUnit, ')
+          ..write('isDefaultSaleUnit: $isDefaultSaleUnit')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    medicineId,
+    name,
+    conversionFactor,
+    salePrice,
+    isBaseUnit,
+    isDefaultSaleUnit,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProductUnit &&
+          other.id == this.id &&
+          other.medicineId == this.medicineId &&
+          other.name == this.name &&
+          other.conversionFactor == this.conversionFactor &&
+          other.salePrice == this.salePrice &&
+          other.isBaseUnit == this.isBaseUnit &&
+          other.isDefaultSaleUnit == this.isDefaultSaleUnit);
+}
+
+class ProductUnitsCompanion extends UpdateCompanion<ProductUnit> {
+  final Value<int> id;
+  final Value<int> medicineId;
+  final Value<String> name;
+  final Value<double> conversionFactor;
+  final Value<double> salePrice;
+  final Value<bool> isBaseUnit;
+  final Value<bool> isDefaultSaleUnit;
+  const ProductUnitsCompanion({
+    this.id = const Value.absent(),
+    this.medicineId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.conversionFactor = const Value.absent(),
+    this.salePrice = const Value.absent(),
+    this.isBaseUnit = const Value.absent(),
+    this.isDefaultSaleUnit = const Value.absent(),
+  });
+  ProductUnitsCompanion.insert({
+    this.id = const Value.absent(),
+    required int medicineId,
+    required String name,
+    this.conversionFactor = const Value.absent(),
+    required double salePrice,
+    this.isBaseUnit = const Value.absent(),
+    this.isDefaultSaleUnit = const Value.absent(),
+  }) : medicineId = Value(medicineId),
+       name = Value(name),
+       salePrice = Value(salePrice);
+  static Insertable<ProductUnit> custom({
+    Expression<int>? id,
+    Expression<int>? medicineId,
+    Expression<String>? name,
+    Expression<double>? conversionFactor,
+    Expression<double>? salePrice,
+    Expression<bool>? isBaseUnit,
+    Expression<bool>? isDefaultSaleUnit,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (medicineId != null) 'medicine_id': medicineId,
+      if (name != null) 'name': name,
+      if (conversionFactor != null) 'conversion_factor': conversionFactor,
+      if (salePrice != null) 'sale_price': salePrice,
+      if (isBaseUnit != null) 'is_base_unit': isBaseUnit,
+      if (isDefaultSaleUnit != null) 'is_default_sale_unit': isDefaultSaleUnit,
+    });
+  }
+
+  ProductUnitsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? medicineId,
+    Value<String>? name,
+    Value<double>? conversionFactor,
+    Value<double>? salePrice,
+    Value<bool>? isBaseUnit,
+    Value<bool>? isDefaultSaleUnit,
+  }) {
+    return ProductUnitsCompanion(
+      id: id ?? this.id,
+      medicineId: medicineId ?? this.medicineId,
+      name: name ?? this.name,
+      conversionFactor: conversionFactor ?? this.conversionFactor,
+      salePrice: salePrice ?? this.salePrice,
+      isBaseUnit: isBaseUnit ?? this.isBaseUnit,
+      isDefaultSaleUnit: isDefaultSaleUnit ?? this.isDefaultSaleUnit,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (medicineId.present) {
+      map['medicine_id'] = Variable<int>(medicineId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (conversionFactor.present) {
+      map['conversion_factor'] = Variable<double>(conversionFactor.value);
+    }
+    if (salePrice.present) {
+      map['sale_price'] = Variable<double>(salePrice.value);
+    }
+    if (isBaseUnit.present) {
+      map['is_base_unit'] = Variable<bool>(isBaseUnit.value);
+    }
+    if (isDefaultSaleUnit.present) {
+      map['is_default_sale_unit'] = Variable<bool>(isDefaultSaleUnit.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProductUnitsCompanion(')
+          ..write('id: $id, ')
+          ..write('medicineId: $medicineId, ')
+          ..write('name: $name, ')
+          ..write('conversionFactor: $conversionFactor, ')
+          ..write('salePrice: $salePrice, ')
+          ..write('isBaseUnit: $isBaseUnit, ')
+          ..write('isDefaultSaleUnit: $isDefaultSaleUnit')
           ..write(')'))
         .toString();
   }
@@ -3030,6 +3801,29 @@ class $SaleItemsTable extends SaleItems
     type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _unitNameMeta = const VerificationMeta(
+    'unitName',
+  );
+  @override
+  late final GeneratedColumn<String> unitName = GeneratedColumn<String>(
+    'unit_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _conversionFactorMeta = const VerificationMeta(
+    'conversionFactor',
+  );
+  @override
+  late final GeneratedColumn<double> conversionFactor = GeneratedColumn<double>(
+    'conversion_factor',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3038,6 +3832,8 @@ class $SaleItemsTable extends SaleItems
     quantity,
     price,
     total,
+    unitName,
+    conversionFactor,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3094,6 +3890,21 @@ class $SaleItemsTable extends SaleItems
     } else if (isInserting) {
       context.missing(_totalMeta);
     }
+    if (data.containsKey('unit_name')) {
+      context.handle(
+        _unitNameMeta,
+        unitName.isAcceptableOrUnknown(data['unit_name']!, _unitNameMeta),
+      );
+    }
+    if (data.containsKey('conversion_factor')) {
+      context.handle(
+        _conversionFactorMeta,
+        conversionFactor.isAcceptableOrUnknown(
+          data['conversion_factor']!,
+          _conversionFactorMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3127,6 +3938,14 @@ class $SaleItemsTable extends SaleItems
         DriftSqlType.double,
         data['${effectivePrefix}total'],
       )!,
+      unitName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit_name'],
+      ),
+      conversionFactor: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}conversion_factor'],
+      )!,
     );
   }
 
@@ -3143,6 +3962,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
   final int quantity;
   final double price;
   final double total;
+  final String? unitName;
+  final double conversionFactor;
   const SaleItem({
     required this.id,
     required this.saleId,
@@ -3150,6 +3971,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     required this.quantity,
     required this.price,
     required this.total,
+    this.unitName,
+    required this.conversionFactor,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3160,6 +3983,10 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     map['quantity'] = Variable<int>(quantity);
     map['price'] = Variable<double>(price);
     map['total'] = Variable<double>(total);
+    if (!nullToAbsent || unitName != null) {
+      map['unit_name'] = Variable<String>(unitName);
+    }
+    map['conversion_factor'] = Variable<double>(conversionFactor);
     return map;
   }
 
@@ -3171,6 +3998,10 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       quantity: Value(quantity),
       price: Value(price),
       total: Value(total),
+      unitName: unitName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(unitName),
+      conversionFactor: Value(conversionFactor),
     );
   }
 
@@ -3186,6 +4017,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       quantity: serializer.fromJson<int>(json['quantity']),
       price: serializer.fromJson<double>(json['price']),
       total: serializer.fromJson<double>(json['total']),
+      unitName: serializer.fromJson<String?>(json['unitName']),
+      conversionFactor: serializer.fromJson<double>(json['conversionFactor']),
     );
   }
   @override
@@ -3198,6 +4031,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       'quantity': serializer.toJson<int>(quantity),
       'price': serializer.toJson<double>(price),
       'total': serializer.toJson<double>(total),
+      'unitName': serializer.toJson<String?>(unitName),
+      'conversionFactor': serializer.toJson<double>(conversionFactor),
     };
   }
 
@@ -3208,6 +4043,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     int? quantity,
     double? price,
     double? total,
+    Value<String?> unitName = const Value.absent(),
+    double? conversionFactor,
   }) => SaleItem(
     id: id ?? this.id,
     saleId: saleId ?? this.saleId,
@@ -3215,6 +4052,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     quantity: quantity ?? this.quantity,
     price: price ?? this.price,
     total: total ?? this.total,
+    unitName: unitName.present ? unitName.value : this.unitName,
+    conversionFactor: conversionFactor ?? this.conversionFactor,
   );
   SaleItem copyWithCompanion(SaleItemsCompanion data) {
     return SaleItem(
@@ -3224,6 +4063,10 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
       price: data.price.present ? data.price.value : this.price,
       total: data.total.present ? data.total.value : this.total,
+      unitName: data.unitName.present ? data.unitName.value : this.unitName,
+      conversionFactor: data.conversionFactor.present
+          ? data.conversionFactor.value
+          : this.conversionFactor,
     );
   }
 
@@ -3235,13 +4078,24 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           ..write('batchId: $batchId, ')
           ..write('quantity: $quantity, ')
           ..write('price: $price, ')
-          ..write('total: $total')
+          ..write('total: $total, ')
+          ..write('unitName: $unitName, ')
+          ..write('conversionFactor: $conversionFactor')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, saleId, batchId, quantity, price, total);
+  int get hashCode => Object.hash(
+    id,
+    saleId,
+    batchId,
+    quantity,
+    price,
+    total,
+    unitName,
+    conversionFactor,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3251,7 +4105,9 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           other.batchId == this.batchId &&
           other.quantity == this.quantity &&
           other.price == this.price &&
-          other.total == this.total);
+          other.total == this.total &&
+          other.unitName == this.unitName &&
+          other.conversionFactor == this.conversionFactor);
 }
 
 class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
@@ -3261,6 +4117,8 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
   final Value<int> quantity;
   final Value<double> price;
   final Value<double> total;
+  final Value<String?> unitName;
+  final Value<double> conversionFactor;
   const SaleItemsCompanion({
     this.id = const Value.absent(),
     this.saleId = const Value.absent(),
@@ -3268,6 +4126,8 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     this.quantity = const Value.absent(),
     this.price = const Value.absent(),
     this.total = const Value.absent(),
+    this.unitName = const Value.absent(),
+    this.conversionFactor = const Value.absent(),
   });
   SaleItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -3276,6 +4136,8 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     required int quantity,
     required double price,
     required double total,
+    this.unitName = const Value.absent(),
+    this.conversionFactor = const Value.absent(),
   }) : saleId = Value(saleId),
        batchId = Value(batchId),
        quantity = Value(quantity),
@@ -3288,6 +4150,8 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     Expression<int>? quantity,
     Expression<double>? price,
     Expression<double>? total,
+    Expression<String>? unitName,
+    Expression<double>? conversionFactor,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3296,6 +4160,8 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       if (quantity != null) 'quantity': quantity,
       if (price != null) 'price': price,
       if (total != null) 'total': total,
+      if (unitName != null) 'unit_name': unitName,
+      if (conversionFactor != null) 'conversion_factor': conversionFactor,
     });
   }
 
@@ -3306,6 +4172,8 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     Value<int>? quantity,
     Value<double>? price,
     Value<double>? total,
+    Value<String?>? unitName,
+    Value<double>? conversionFactor,
   }) {
     return SaleItemsCompanion(
       id: id ?? this.id,
@@ -3314,6 +4182,8 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       quantity: quantity ?? this.quantity,
       price: price ?? this.price,
       total: total ?? this.total,
+      unitName: unitName ?? this.unitName,
+      conversionFactor: conversionFactor ?? this.conversionFactor,
     );
   }
 
@@ -3338,6 +4208,12 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     if (total.present) {
       map['total'] = Variable<double>(total.value);
     }
+    if (unitName.present) {
+      map['unit_name'] = Variable<String>(unitName.value);
+    }
+    if (conversionFactor.present) {
+      map['conversion_factor'] = Variable<double>(conversionFactor.value);
+    }
     return map;
   }
 
@@ -3349,7 +4225,9 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
           ..write('batchId: $batchId, ')
           ..write('quantity: $quantity, ')
           ..write('price: $price, ')
-          ..write('total: $total')
+          ..write('total: $total, ')
+          ..write('unitName: $unitName, ')
+          ..write('conversionFactor: $conversionFactor')
           ..write(')'))
         .toString();
   }
@@ -3363,6 +4241,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CategoriesTable categories = $CategoriesTable(this);
   late final $MedicinesTable medicines = $MedicinesTable(this);
   late final $BatchesTable batches = $BatchesTable(this);
+  late final $ProductUnitsTable productUnits = $ProductUnitsTable(this);
   late final $CustomersTable customers = $CustomersTable(this);
   late final $SalesTable sales = $SalesTable(this);
   late final $SaleItemsTable saleItems = $SaleItemsTable(this);
@@ -3376,6 +4255,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     categories,
     medicines,
     batches,
+    productUnits,
     customers,
     sales,
     saleItems,
@@ -4022,6 +4902,12 @@ typedef $$MedicinesTableCreateCompanionBuilder =
       Value<String?> manufacturer,
       Value<String?> description,
       Value<int> minStock,
+      Value<String?> brand,
+      Value<String?> model,
+      Value<String?> genericName,
+      Value<String?> strength,
+      Value<String?> dosageForm,
+      Value<String> baseUnitName,
     });
 typedef $$MedicinesTableUpdateCompanionBuilder =
     MedicinesCompanion Function({
@@ -4033,6 +4919,12 @@ typedef $$MedicinesTableUpdateCompanionBuilder =
       Value<String?> manufacturer,
       Value<String?> description,
       Value<int> minStock,
+      Value<String?> brand,
+      Value<String?> model,
+      Value<String?> genericName,
+      Value<String?> strength,
+      Value<String?> dosageForm,
+      Value<String> baseUnitName,
     });
 
 final class $$MedicinesTableReferences
@@ -4053,6 +4945,27 @@ final class $$MedicinesTableReferences
     ).filter((f) => f.medicineId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_batchesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ProductUnitsTable, List<ProductUnit>>
+  _productUnitsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.productUnits,
+    aliasName: $_aliasNameGenerator(
+      db.medicines.id,
+      db.productUnits.medicineId,
+    ),
+  );
+
+  $$ProductUnitsTableProcessedTableManager get productUnitsRefs {
+    final manager = $$ProductUnitsTableTableManager(
+      $_db,
+      $_db.productUnits,
+    ).filter((f) => f.medicineId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_productUnitsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4108,6 +5021,36 @@ class $$MedicinesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get genericName => $composableBuilder(
+    column: $table.genericName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get strength => $composableBuilder(
+    column: $table.strength,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dosageForm => $composableBuilder(
+    column: $table.dosageForm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get baseUnitName => $composableBuilder(
+    column: $table.baseUnitName,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> batchesRefs(
     Expression<bool> Function($$BatchesTableFilterComposer f) f,
   ) {
@@ -4124,6 +5067,31 @@ class $$MedicinesTableFilterComposer
           }) => $$BatchesTableFilterComposer(
             $db: $db,
             $table: $db.batches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> productUnitsRefs(
+    Expression<bool> Function($$ProductUnitsTableFilterComposer f) f,
+  ) {
+    final $$ProductUnitsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.productUnits,
+      getReferencedColumn: (t) => t.medicineId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductUnitsTableFilterComposer(
+            $db: $db,
+            $table: $db.productUnits,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4182,6 +5150,36 @@ class $$MedicinesTableOrderingComposer
     column: $table.minStock,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get genericName => $composableBuilder(
+    column: $table.genericName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get strength => $composableBuilder(
+    column: $table.strength,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dosageForm => $composableBuilder(
+    column: $table.dosageForm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get baseUnitName => $composableBuilder(
+    column: $table.baseUnitName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MedicinesTableAnnotationComposer
@@ -4225,6 +5223,30 @@ class $$MedicinesTableAnnotationComposer
   GeneratedColumn<int> get minStock =>
       $composableBuilder(column: $table.minStock, builder: (column) => column);
 
+  GeneratedColumn<String> get brand =>
+      $composableBuilder(column: $table.brand, builder: (column) => column);
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<String> get genericName => $composableBuilder(
+    column: $table.genericName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get strength =>
+      $composableBuilder(column: $table.strength, builder: (column) => column);
+
+  GeneratedColumn<String> get dosageForm => $composableBuilder(
+    column: $table.dosageForm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get baseUnitName => $composableBuilder(
+    column: $table.baseUnitName,
+    builder: (column) => column,
+  );
+
   Expression<T> batchesRefs<T extends Object>(
     Expression<T> Function($$BatchesTableAnnotationComposer a) f,
   ) {
@@ -4249,6 +5271,31 @@ class $$MedicinesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> productUnitsRefs<T extends Object>(
+    Expression<T> Function($$ProductUnitsTableAnnotationComposer a) f,
+  ) {
+    final $$ProductUnitsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.productUnits,
+      getReferencedColumn: (t) => t.medicineId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProductUnitsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.productUnits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$MedicinesTableTableManager
@@ -4264,7 +5311,7 @@ class $$MedicinesTableTableManager
           $$MedicinesTableUpdateCompanionBuilder,
           (Medicine, $$MedicinesTableReferences),
           Medicine,
-          PrefetchHooks Function({bool batchesRefs})
+          PrefetchHooks Function({bool batchesRefs, bool productUnitsRefs})
         > {
   $$MedicinesTableTableManager(_$AppDatabase db, $MedicinesTable table)
     : super(
@@ -4287,6 +5334,12 @@ class $$MedicinesTableTableManager
                 Value<String?> manufacturer = const Value.absent(),
                 Value<String?> description = const Value.absent(),
                 Value<int> minStock = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
+                Value<String?> model = const Value.absent(),
+                Value<String?> genericName = const Value.absent(),
+                Value<String?> strength = const Value.absent(),
+                Value<String?> dosageForm = const Value.absent(),
+                Value<String> baseUnitName = const Value.absent(),
               }) => MedicinesCompanion(
                 id: id,
                 name: name,
@@ -4296,6 +5349,12 @@ class $$MedicinesTableTableManager
                 manufacturer: manufacturer,
                 description: description,
                 minStock: minStock,
+                brand: brand,
+                model: model,
+                genericName: genericName,
+                strength: strength,
+                dosageForm: dosageForm,
+                baseUnitName: baseUnitName,
               ),
           createCompanionCallback:
               ({
@@ -4307,6 +5366,12 @@ class $$MedicinesTableTableManager
                 Value<String?> manufacturer = const Value.absent(),
                 Value<String?> description = const Value.absent(),
                 Value<int> minStock = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
+                Value<String?> model = const Value.absent(),
+                Value<String?> genericName = const Value.absent(),
+                Value<String?> strength = const Value.absent(),
+                Value<String?> dosageForm = const Value.absent(),
+                Value<String> baseUnitName = const Value.absent(),
               }) => MedicinesCompanion.insert(
                 id: id,
                 name: name,
@@ -4316,6 +5381,12 @@ class $$MedicinesTableTableManager
                 manufacturer: manufacturer,
                 description: description,
                 minStock: minStock,
+                brand: brand,
+                model: model,
+                genericName: genericName,
+                strength: strength,
+                dosageForm: dosageForm,
+                baseUnitName: baseUnitName,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -4325,28 +5396,63 @@ class $$MedicinesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({batchesRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (batchesRefs) db.batches],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (batchesRefs)
-                    await $_getPrefetchedData<Medicine, $MedicinesTable, Batch>(
-                      currentTable: table,
-                      referencedTable: $$MedicinesTableReferences
-                          ._batchesRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$MedicinesTableReferences(db, table, p0).batchesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.medicineId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({batchesRefs = false, productUnitsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (batchesRefs) db.batches,
+                    if (productUnitsRefs) db.productUnits,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (batchesRefs)
+                        await $_getPrefetchedData<
+                          Medicine,
+                          $MedicinesTable,
+                          Batch
+                        >(
+                          currentTable: table,
+                          referencedTable: $$MedicinesTableReferences
+                              ._batchesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MedicinesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).batchesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.medicineId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (productUnitsRefs)
+                        await $_getPrefetchedData<
+                          Medicine,
+                          $MedicinesTable,
+                          ProductUnit
+                        >(
+                          currentTable: table,
+                          referencedTable: $$MedicinesTableReferences
+                              ._productUnitsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MedicinesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).productUnitsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.medicineId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -4363,7 +5469,7 @@ typedef $$MedicinesTableProcessedTableManager =
       $$MedicinesTableUpdateCompanionBuilder,
       (Medicine, $$MedicinesTableReferences),
       Medicine,
-      PrefetchHooks Function({bool batchesRefs})
+      PrefetchHooks Function({bool batchesRefs, bool productUnitsRefs})
     >;
 typedef $$BatchesTableCreateCompanionBuilder =
     BatchesCompanion Function({
@@ -4820,6 +5926,363 @@ typedef $$BatchesTableProcessedTableManager =
       (Batch, $$BatchesTableReferences),
       Batch,
       PrefetchHooks Function({bool medicineId, bool saleItemsRefs})
+    >;
+typedef $$ProductUnitsTableCreateCompanionBuilder =
+    ProductUnitsCompanion Function({
+      Value<int> id,
+      required int medicineId,
+      required String name,
+      Value<double> conversionFactor,
+      required double salePrice,
+      Value<bool> isBaseUnit,
+      Value<bool> isDefaultSaleUnit,
+    });
+typedef $$ProductUnitsTableUpdateCompanionBuilder =
+    ProductUnitsCompanion Function({
+      Value<int> id,
+      Value<int> medicineId,
+      Value<String> name,
+      Value<double> conversionFactor,
+      Value<double> salePrice,
+      Value<bool> isBaseUnit,
+      Value<bool> isDefaultSaleUnit,
+    });
+
+final class $$ProductUnitsTableReferences
+    extends BaseReferences<_$AppDatabase, $ProductUnitsTable, ProductUnit> {
+  $$ProductUnitsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $MedicinesTable _medicineIdTable(_$AppDatabase db) =>
+      db.medicines.createAlias(
+        $_aliasNameGenerator(db.productUnits.medicineId, db.medicines.id),
+      );
+
+  $$MedicinesTableProcessedTableManager get medicineId {
+    final $_column = $_itemColumn<int>('medicine_id')!;
+
+    final manager = $$MedicinesTableTableManager(
+      $_db,
+      $_db.medicines,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_medicineIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ProductUnitsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProductUnitsTable> {
+  $$ProductUnitsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get conversionFactor => $composableBuilder(
+    column: $table.conversionFactor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get salePrice => $composableBuilder(
+    column: $table.salePrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBaseUnit => $composableBuilder(
+    column: $table.isBaseUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDefaultSaleUnit => $composableBuilder(
+    column: $table.isDefaultSaleUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$MedicinesTableFilterComposer get medicineId {
+    final $$MedicinesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.medicineId,
+      referencedTable: $db.medicines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MedicinesTableFilterComposer(
+            $db: $db,
+            $table: $db.medicines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProductUnitsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProductUnitsTable> {
+  $$ProductUnitsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get conversionFactor => $composableBuilder(
+    column: $table.conversionFactor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get salePrice => $composableBuilder(
+    column: $table.salePrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isBaseUnit => $composableBuilder(
+    column: $table.isBaseUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDefaultSaleUnit => $composableBuilder(
+    column: $table.isDefaultSaleUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$MedicinesTableOrderingComposer get medicineId {
+    final $$MedicinesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.medicineId,
+      referencedTable: $db.medicines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MedicinesTableOrderingComposer(
+            $db: $db,
+            $table: $db.medicines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProductUnitsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProductUnitsTable> {
+  $$ProductUnitsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get conversionFactor => $composableBuilder(
+    column: $table.conversionFactor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get salePrice =>
+      $composableBuilder(column: $table.salePrice, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBaseUnit => $composableBuilder(
+    column: $table.isBaseUnit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDefaultSaleUnit => $composableBuilder(
+    column: $table.isDefaultSaleUnit,
+    builder: (column) => column,
+  );
+
+  $$MedicinesTableAnnotationComposer get medicineId {
+    final $$MedicinesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.medicineId,
+      referencedTable: $db.medicines,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MedicinesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.medicines,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProductUnitsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProductUnitsTable,
+          ProductUnit,
+          $$ProductUnitsTableFilterComposer,
+          $$ProductUnitsTableOrderingComposer,
+          $$ProductUnitsTableAnnotationComposer,
+          $$ProductUnitsTableCreateCompanionBuilder,
+          $$ProductUnitsTableUpdateCompanionBuilder,
+          (ProductUnit, $$ProductUnitsTableReferences),
+          ProductUnit,
+          PrefetchHooks Function({bool medicineId})
+        > {
+  $$ProductUnitsTableTableManager(_$AppDatabase db, $ProductUnitsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProductUnitsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProductUnitsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProductUnitsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> medicineId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<double> conversionFactor = const Value.absent(),
+                Value<double> salePrice = const Value.absent(),
+                Value<bool> isBaseUnit = const Value.absent(),
+                Value<bool> isDefaultSaleUnit = const Value.absent(),
+              }) => ProductUnitsCompanion(
+                id: id,
+                medicineId: medicineId,
+                name: name,
+                conversionFactor: conversionFactor,
+                salePrice: salePrice,
+                isBaseUnit: isBaseUnit,
+                isDefaultSaleUnit: isDefaultSaleUnit,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int medicineId,
+                required String name,
+                Value<double> conversionFactor = const Value.absent(),
+                required double salePrice,
+                Value<bool> isBaseUnit = const Value.absent(),
+                Value<bool> isDefaultSaleUnit = const Value.absent(),
+              }) => ProductUnitsCompanion.insert(
+                id: id,
+                medicineId: medicineId,
+                name: name,
+                conversionFactor: conversionFactor,
+                salePrice: salePrice,
+                isBaseUnit: isBaseUnit,
+                isDefaultSaleUnit: isDefaultSaleUnit,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ProductUnitsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({medicineId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (medicineId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.medicineId,
+                                referencedTable: $$ProductUnitsTableReferences
+                                    ._medicineIdTable(db),
+                                referencedColumn: $$ProductUnitsTableReferences
+                                    ._medicineIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ProductUnitsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProductUnitsTable,
+      ProductUnit,
+      $$ProductUnitsTableFilterComposer,
+      $$ProductUnitsTableOrderingComposer,
+      $$ProductUnitsTableAnnotationComposer,
+      $$ProductUnitsTableCreateCompanionBuilder,
+      $$ProductUnitsTableUpdateCompanionBuilder,
+      (ProductUnit, $$ProductUnitsTableReferences),
+      ProductUnit,
+      PrefetchHooks Function({bool medicineId})
     >;
 typedef $$CustomersTableCreateCompanionBuilder =
     CustomersCompanion Function({
@@ -5705,6 +7168,8 @@ typedef $$SaleItemsTableCreateCompanionBuilder =
       required int quantity,
       required double price,
       required double total,
+      Value<String?> unitName,
+      Value<double> conversionFactor,
     });
 typedef $$SaleItemsTableUpdateCompanionBuilder =
     SaleItemsCompanion Function({
@@ -5714,6 +7179,8 @@ typedef $$SaleItemsTableUpdateCompanionBuilder =
       Value<int> quantity,
       Value<double> price,
       Value<double> total,
+      Value<String?> unitName,
+      Value<double> conversionFactor,
     });
 
 final class $$SaleItemsTableReferences
@@ -5782,6 +7249,16 @@ class $$SaleItemsTableFilterComposer
 
   ColumnFilters<double> get total => $composableBuilder(
     column: $table.total,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unitName => $composableBuilder(
+    column: $table.unitName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get conversionFactor => $composableBuilder(
+    column: $table.conversionFactor,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5861,6 +7338,16 @@ class $$SaleItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get unitName => $composableBuilder(
+    column: $table.unitName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get conversionFactor => $composableBuilder(
+    column: $table.conversionFactor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$SalesTableOrderingComposer get saleId {
     final $$SalesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5928,6 +7415,14 @@ class $$SaleItemsTableAnnotationComposer
 
   GeneratedColumn<double> get total =>
       $composableBuilder(column: $table.total, builder: (column) => column);
+
+  GeneratedColumn<String> get unitName =>
+      $composableBuilder(column: $table.unitName, builder: (column) => column);
+
+  GeneratedColumn<double> get conversionFactor => $composableBuilder(
+    column: $table.conversionFactor,
+    builder: (column) => column,
+  );
 
   $$SalesTableAnnotationComposer get saleId {
     final $$SalesTableAnnotationComposer composer = $composerBuilder(
@@ -6010,6 +7505,8 @@ class $$SaleItemsTableTableManager
                 Value<int> quantity = const Value.absent(),
                 Value<double> price = const Value.absent(),
                 Value<double> total = const Value.absent(),
+                Value<String?> unitName = const Value.absent(),
+                Value<double> conversionFactor = const Value.absent(),
               }) => SaleItemsCompanion(
                 id: id,
                 saleId: saleId,
@@ -6017,6 +7514,8 @@ class $$SaleItemsTableTableManager
                 quantity: quantity,
                 price: price,
                 total: total,
+                unitName: unitName,
+                conversionFactor: conversionFactor,
               ),
           createCompanionCallback:
               ({
@@ -6026,6 +7525,8 @@ class $$SaleItemsTableTableManager
                 required int quantity,
                 required double price,
                 required double total,
+                Value<String?> unitName = const Value.absent(),
+                Value<double> conversionFactor = const Value.absent(),
               }) => SaleItemsCompanion.insert(
                 id: id,
                 saleId: saleId,
@@ -6033,6 +7534,8 @@ class $$SaleItemsTableTableManager
                 quantity: quantity,
                 price: price,
                 total: total,
+                unitName: unitName,
+                conversionFactor: conversionFactor,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -6128,6 +7631,8 @@ class $AppDatabaseManager {
       $$MedicinesTableTableManager(_db, _db.medicines);
   $$BatchesTableTableManager get batches =>
       $$BatchesTableTableManager(_db, _db.batches);
+  $$ProductUnitsTableTableManager get productUnits =>
+      $$ProductUnitsTableTableManager(_db, _db.productUnits);
   $$CustomersTableTableManager get customers =>
       $$CustomersTableTableManager(_db, _db.customers);
   $$SalesTableTableManager get sales =>

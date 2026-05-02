@@ -12,6 +12,8 @@ import 'stock_warning_dialog.dart';
 import 'widgets/pos_header.dart';
 import 'widgets/product_table.dart';
 import 'widgets/cart_panel.dart';
+import '../../data/repositories/settings_repository.dart';
+import 'unit_selection_dialog.dart';
 import '../shared/app_theme.dart';
 
 // ── Intents for Keyboard Shortcuts ───────────────────────────────────────────
@@ -51,6 +53,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
 
   final TextEditingController _customerNameController = TextEditingController();
   final TextEditingController _customerPhoneController = TextEditingController();
+  final TextEditingController _productSearchController = TextEditingController();
   final TextEditingController _amountReceivedController = TextEditingController();
 
   List<Customer> _customerSearchResults = [];
@@ -98,6 +101,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     _cartFocus.dispose();
     _customerNameController.dispose();
     _customerPhoneController.dispose();
+    _productSearchController.dispose();
     _amountReceivedController.dispose();
     _productGridController.dispose();
     super.dispose();
@@ -139,26 +143,42 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     if (index < 0 || index >= filteredList.length) return;
     final medicine = filteredList[index];
     final medicineRepo = ref.read(medicineRepositoryProvider);
+    final settingsRepo = ref.read(settingsRepositoryProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
+    
     final batches = await medicineRepo.getBatchesForMedicine(medicine.id);
-
     if (batches.isEmpty) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No stock available'), backgroundColor: Colors.red));
       return;
     }
 
+    // Determine the unit
+    final units = await medicineRepo.getProductUnits(medicine.id);
+    final showUnitSelector = await settingsRepo.getSetting('pos_show_unit_selector') == 'true';
+    
+    ProductUnit? selectedUnit;
+    if (showUnitSelector && units.length > 1) {
+      if (!mounted) return;
+      selectedUnit = await UnitSelectionDialog.show(context, medicine, units);
+      if (selectedUnit == null) return; // User cancelled
+    } else {
+      selectedUnit = units.firstWhere((u) => u.isDefaultSaleUnit, orElse: () => units.first);
+    }
+
     final totalStock = batches.fold<int>(0, (sum, b) => sum + b.quantity);
-    final alreadyInCart = cartNotifier.getMedicineQuantityInCart(medicine.id);
+    final alreadyInCartBaseQty = cartNotifier.getMedicineQuantityInCart(medicine.id);
     final bestBatch = (List<Batch>.from(batches)..sort((a, b) => a.expiryDate.compareTo(b.expiryDate))).first;
     
-    final availableStock = totalStock - alreadyInCart;
-    if (availableStock <= 0 && !_dismissedStockWarnings.contains(medicine.id)) {
-       final result = await StockWarningDialog.show(context, productName: medicine.name, availableStock: totalStock, requestedQuantity: 1, alreadyInCart: alreadyInCart);
+    final requestedBaseQty = selectedUnit.conversionFactor;
+    final availableStock = totalStock - alreadyInCartBaseQty;
+
+    if (availableStock < requestedBaseQty && !_dismissedStockWarnings.contains(medicine.id)) {
+       final result = await StockWarningDialog.show(context, productName: medicine.name, availableStock: totalStock, requestedQuantity: requestedBaseQty.toInt(), alreadyInCart: alreadyInCartBaseQty);
        if (result == null || !result.proceed) return;
        if (result.dontShowAgain) setState(() => _dismissedStockWarnings.add(medicine.id));
     }
 
-    cartNotifier.addItem(medicine, bestBatch, totalBatchStock: totalStock);
+    cartNotifier.addItem(medicine, bestBatch, selectedUnit, totalBatchStock: totalStock);
     setState(() => _selectedCartItemIndex = ref.read(cartProvider).items.length - 1);
   }
 
@@ -204,6 +224,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     ref.read(cartProvider.notifier).clear();
     setState(() { _changeReturn = 0.0; _paymentMode = 'Cash'; _searchQuery = ''; _selectedProductIndex = 0; _selectedCartItemIndex = -1; });
     _clearCustomer();
+    _productSearchController.clear();
     _productSearchFocus.requestFocus();
   }
 
@@ -217,7 +238,12 @@ class _PosScreenState extends ConsumerState<PosScreen> {
       stream: medicineRepo.watchAllMedicines(),
       builder: (context, snapshot) {
         final allMedicines = snapshot.data ?? [];
-        final filteredMedicines = _searchQuery.isEmpty ? allMedicines : allMedicines.where((m) => m.name.toLowerCase().contains(_searchQuery.toLowerCase()) || m.code.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+        final query = _productSearchController.text.toLowerCase();
+        final filteredMedicines = query.isEmpty 
+            ? allMedicines 
+            : allMedicines.where((m) => 
+                m.name.toLowerCase().contains(query) || 
+                m.code.toLowerCase().contains(query)).toList();
 
         return Shortcuts(
           shortcuts: {
@@ -254,7 +280,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
               _NewSaleIntent: CallbackAction<_NewSaleIntent>(onInvoke: (_) { _newSale(); return null; }),
               _ClearSearchIntent: CallbackAction<_ClearSearchIntent>(onInvoke: (_) { 
                 if (_customerSearchResults.isNotEmpty) setState(() => _customerSearchResults = []);
-                else if (_searchQuery.isNotEmpty) setState(() { _searchQuery = ''; _selectedProductIndex = 0; });
+                else if (_productSearchController.text.isNotEmpty) setState(() { _productSearchController.clear(); _selectedProductIndex = 0; });
                 return null;
               }),
               _NavUpIntent: CallbackAction<_NavUpIntent>(onInvoke: (_) {
@@ -323,9 +349,10 @@ class _PosScreenState extends ConsumerState<PosScreen> {
             });
           },
           searchQuery: _searchQuery,
+          productSearchController: _productSearchController,
           productSearchFocus: _productSearchFocus,
-          onSearchChanged: (val) => setState(() { _searchQuery = val; _selectedProductIndex = 0; }),
-          onClearSearch: () => setState(() { _searchQuery = ''; _selectedProductIndex = 0; _productSearchFocus.requestFocus(); }),
+          onSearchChanged: (val) => setState(() { _selectedProductIndex = 0; }),
+          onClearSearch: () => setState(() { _productSearchController.clear(); _selectedProductIndex = 0; _productSearchFocus.requestFocus(); }),
           onNewSale: _newSale,
           onClearCustomer: _clearCustomer,
         );

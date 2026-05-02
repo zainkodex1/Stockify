@@ -101,14 +101,12 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
         cart.items.map((item) => SaleItemsCompanion(
           batchId: drift.Value(item.batch.id),
           quantity: drift.Value(item.quantity),
-          price: drift.Value(item.batch.salePrice),
+          price: drift.Value(item.selectedUnit.salePrice),
           total: drift.Value(item.total),
+          unitName: drift.Value(item.selectedUnit.name),
+          conversionFactor: drift.Value(item.selectedUnit.conversionFactor),
         )).toList(),
       );
-      
-      for (final item in cart.items) {
-        await medicineRepo.updateStock(item.batch.id, -item.quantity);
-      }
       
       final amountReceivedValue = _paymentMode == 'Cash' 
           ? (double.tryParse(_amountReceivedController.text) ?? cart.grandTotal)
@@ -134,8 +132,10 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
           saleId: saleId,
           batchId: i.batch.id,
           quantity: i.quantity,
-          price: i.batch.salePrice,
+          price: i.selectedUnit.salePrice,
           total: i.total,
+          unitName: i.selectedUnit.name,
+          conversionFactor: i.selectedUnit.conversionFactor,
         )).toList(),
         medicines: cart.items.map((i) => i.medicine).toList(),
         customer: cart.customer,

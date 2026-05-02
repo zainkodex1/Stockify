@@ -64,9 +64,9 @@ class CartPanel extends StatelessWidget {
                       return _CartItemRow(
                         item: item,
                         isSelected: index == selectedItemIndex,
-                        onIncrease: () => notifier.updateQuantity(item.batch.id, item.quantity + 1),
-                        onDecrease: () => notifier.updateQuantity(item.batch.id, item.quantity - 1),
-                        onRemove: () => notifier.removeItem(item.batch.id),
+                        onIncrease: () => notifier.updateQuantity(item.batch.id, item.quantity + 1, unitId: item.selectedUnit.id),
+                        onDecrease: () => notifier.updateQuantity(item.batch.id, item.quantity - 1, unitId: item.selectedUnit.id),
+                        onRemove: () => notifier.removeItem(item.batch.id, unitId: item.selectedUnit.id),
                       );
                     },
                   ),
@@ -216,8 +216,8 @@ class _CartItemRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      'PKR ${item.batch.salePrice.toStringAsFixed(0)}',
-                      style: const TextStyle(fontSize: 9, color: AppTheme.textMuted, fontWeight: FontWeight.w500),
+                      '${item.selectedUnit.name} @ PKR ${item.selectedUnit.salePrice.toStringAsFixed(0)}',
+                      style: const TextStyle(fontSize: 9, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -245,7 +245,7 @@ class _CartItemRow extends StatelessWidget {
           ),
           if (hasWarning) ...[
             const SizedBox(height: 4),
-            Text('Only ${item.originalStock} in stock', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: AppTheme.amberWarning)),
+            Text('Only ${item.originalStock} base units in stock (Needs ${item.quantityInBaseUnits.toInt()})', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: AppTheme.amberWarning)),
           ],
         ],
       ),
