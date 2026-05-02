@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../../data/repositories/category_repository.dart';
 import '../../data/database/database.dart';
+import '../shared/app_theme.dart';
 
 class CategoryManagementScreen extends ConsumerStatefulWidget {
   const CategoryManagementScreen({super.key});
@@ -29,27 +30,19 @@ class _CategoryManagementScreenState extends ConsumerState<CategoryManagementScr
 
   Future<void> _loadCategories() async {
     setState(() => _isLoading = true);
-    
     try {
       final repo = ref.read(categoryRepositoryProvider);
-      await repo.initializeDefaultCategories().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () => debugPrint('Category initialization timed out'),
-      );
-      
+      await repo.initializeDefaultCategories().timeout(const Duration(seconds: 5), onTimeout: () => debugPrint('Timeout'));
       final mainCats = await repo.getMainCategories();
       final subsMap = <int, List<Category>>{};
-      
       for (final cat in mainCats) {
         subsMap[cat.id] = await repo.getSubcategories(cat.id);
       }
-      
       if (mounted) {
         setState(() {
           _mainCategories = mainCats;
           _subcategoriesMap = subsMap;
           _isLoading = false;
-          // Auto-expand first category
           if (mainCats.isNotEmpty && _expandedCategories.isEmpty) {
             _expandedCategories.add(mainCats.first.id);
             _selectedCategoryId = mainCats.first.id;
@@ -57,13 +50,7 @@ class _CategoryManagementScreenState extends ConsumerState<CategoryManagementScr
         });
       }
     } catch (e) {
-      debugPrint('Error loading categories: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -71,67 +58,45 @@ class _CategoryManagementScreenState extends ConsumerState<CategoryManagementScr
     try {
       final picker = ImagePicker();
       final XFile? image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512);
-      
       if (image != null) {
-        // Copy to app directory for persistence
         final appDir = await getApplicationDocumentsDirectory();
-        final categoryImagesDir = Directory(p.join(appDir.path, 'category_images'));
-        if (!await categoryImagesDir.exists()) {
-          await categoryImagesDir.create(recursive: true);
-        }
-        
-        final fileName = 'cat_${DateTime.now().millisecondsSinceEpoch}.png';
-        final savedPath = p.join(categoryImagesDir.path, fileName);
-        await File(image.path).copy(savedPath);
-        
-        return savedPath;
+        final dir = Directory(p.join(appDir.path, 'category_images'));
+        if (!await dir.exists()) await dir.create(recursive: true);
+        final path = p.join(dir.path, 'cat_${DateTime.now().millisecondsSinceEpoch}.png');
+        await File(image.path).copy(path);
+        return path;
       }
-    } catch (e) {
-      debugPrint('Image picker error: $e');
-    }
+    } catch (e) {}
     return null;
   }
 
-  void _showCategoryDialog({Category? category, Category? parent, bool isSubcategory = false}) {
-    final nameController = TextEditingController(text: category?.name ?? '');
-    final descController = TextEditingController(text: category?.description ?? '');
-    String? imagePath = category?.imageUrl;
+  void _showCategoryDialog({Category? category, Category? parent, bool isSub = false}) {
+    final nameCtrl = TextEditingController(text: category?.name ?? '');
+    final descCtrl = TextEditingController(text: category?.description ?? '');
+    String? img = category?.imageUrl;
     
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        builder: (context, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.r20)),
           title: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isSubcategory 
-                        ? [Colors.orange.shade400, Colors.deepOrange.shade400]
-                        : [Colors.teal.shade400, Colors.cyan.shade400],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: isSub ? AppTheme.primaryButtonGradient : AppTheme.accentGradient,
+                  borderRadius: BorderRadius.circular(AppTheme.r12),
                 ),
-                child: Icon(
-                  isSubcategory ? Icons.subdirectory_arrow_right : Icons.category,
-                  color: Colors.white,
-                ),
+                child: Icon(isSub ? Icons.subdirectory_arrow_right_rounded : Icons.category_rounded, color: Colors.white, size: 22),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      category != null 
-                          ? 'Edit ${isSubcategory ? "Subcategory" : "Category"}'
-                          : 'Add ${isSubcategory ? "Subcategory" : "Category"}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    if (parent != null)
-                      Text('Under: ${parent.name}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    Text(category != null ? 'Edit ${isSub ? "Sub" : "Main"}' : 'New ${isSub ? "Sub" : "Main"}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+                    if (parent != null) Text('Under ${parent.name}', style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
                   ],
                 ),
               ),
@@ -141,146 +106,37 @@ class _CategoryManagementScreenState extends ConsumerState<CategoryManagementScr
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Image Picker
                 GestureDetector(
                   onTap: () async {
                     final path = await _pickImage();
-                    if (path != null) {
-                      setDialogState(() => imagePath = path);
-                    }
+                    if (path != null) setS(() => img = path);
                   },
                   child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade300, width: 2),
-                      image: imagePath != null && imagePath!.isNotEmpty
-                          ? DecorationImage(
-                              image: FileImage(File(imagePath!)),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                    ),
-                    child: imagePath == null || imagePath!.isEmpty
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_photo_alternate, size: 40, color: Colors.grey.shade400),
-                              const SizedBox(height: 4),
-                              Text('Add Image', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                              Text('(Optional)', style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
-                            ],
-                          )
-                        : Stack(
-                            children: [
-                              Positioned(
-                                top: 4,
-                                right: 4,
-                                child: CircleAvatar(
-                                  radius: 14,
-                                  backgroundColor: Colors.red,
-                                  child: IconButton(
-                                    padding: EdgeInsets.zero,
-                                    icon: const Icon(Icons.close, size: 14, color: Colors.white),
-                                    onPressed: () => setDialogState(() => imagePath = null),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                    width: 100, height: 100,
+                    decoration: BoxDecoration(color: AppTheme.surfaceVariant, borderRadius: BorderRadius.circular(AppTheme.r16), border: Border.all(color: AppTheme.border, width: 2),
+                      image: img != null ? DecorationImage(image: FileImage(File(img!)), fit: BoxFit.cover) : null),
+                    child: img == null ? const Icon(Icons.add_photo_alternate_rounded, size: 32, color: AppTheme.textMuted) : null,
                   ),
                 ),
-                const SizedBox(height: 20),
-                
-                // Name Field
-                TextField(
-                  controller: nameController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: '${isSubcategory ? "Subcategory" : "Category"} Name *',
-                    hintText: isSubcategory ? 'e.g., Hot Drinks' : 'e.g., Beverages',
-                    prefixIcon: const Icon(Icons.label),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                  ),
-                ),
+                const SizedBox(height: 24),
+                TextField(controller: nameCtrl, decoration: InputDecoration(labelText: 'Display Name', prefixIcon: const Icon(Icons.label_rounded))),
                 const SizedBox(height: 16),
-                
-                // Description Field
-                TextField(
-                  controller: descController,
-                  decoration: InputDecoration(
-                    labelText: 'Description (Optional)',
-                    hintText: 'Brief description...',
-                    prefixIcon: const Icon(Icons.description),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                  ),
-                  maxLines: 2,
-                ),
+                TextField(controller: descCtrl, decoration: InputDecoration(labelText: 'Description (Optional)', prefixIcon: const Icon(Icons.description_rounded)), maxLines: 2),
               ],
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isSubcategory ? Colors.orange : Colors.teal,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              ),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCEL')),
+            ElevatedButton(
               onPressed: () async {
-                if (nameController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Name is required')),
-                  );
-                  return;
-                }
-                
+                if (nameCtrl.text.isEmpty) return;
                 final repo = ref.read(categoryRepositoryProvider);
-                
-                if (category != null) {
-                  // Update existing
-                  await repo.updateCategory(
-                    id: category.id,
-                    name: nameController.text.trim(),
-                    description: descController.text.trim().isNotEmpty 
-                        ? descController.text.trim() 
-                        : null,
-                    imageUrl: imagePath,
-                  );
-                } else {
-                  // Add new
-                  await repo.addCategory(
-                    name: nameController.text.trim(),
-                    parentId: parent?.id,
-                    description: descController.text.trim().isNotEmpty 
-                        ? descController.text.trim() 
-                        : null,
-                    imageUrl: imagePath,
-                  );
-                }
-                
+                if (category != null) await repo.updateCategory(id: category.id, name: nameCtrl.text, description: descCtrl.text, imageUrl: img);
+                else await repo.addCategory(name: nameCtrl.text, parentId: parent?.id, description: descCtrl.text, imageUrl: img);
                 if (ctx.mounted) Navigator.pop(ctx);
                 _loadCategories();
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(category != null ? 'Updated!' : 'Added!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
               },
-              icon: Icon(category != null ? Icons.save : Icons.add),
-              label: Text(category != null ? 'Save' : 'Add'),
+              child: const Text('SAVE CATEGORY'),
             ),
           ],
         ),
@@ -288,280 +144,24 @@ class _CategoryManagementScreenState extends ConsumerState<CategoryManagementScr
     );
   }
 
-  void _showDeleteConfirmation(Category category, {bool isSubcategory = false}) {
+  void _showDelete(Category cat) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.red.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.delete_forever, color: Colors.red.shade700),
-            ),
-            const SizedBox(width: 12),
-            const Text('Delete?'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Are you sure you want to delete "${category.name}"?',
-              textAlign: TextAlign.center,
-            ),
-            if (!isSubcategory) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning, color: Colors.red.shade700),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'This will also delete all subcategories!',
-                        style: TextStyle(fontSize: 12, color: Colors.red),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
+        title: const Text('Confirm Deletion'),
+        content: Text('Are you sure you want to remove "${cat.name}"? This action cannot be undone.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCEL')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.redDanger),
             onPressed: () async {
-              final repo = ref.read(categoryRepositoryProvider);
-              await repo.deleteCategory(category.id);
-              
+              await ref.read(categoryRepositoryProvider).deleteCategory(cat.id);
               if (ctx.mounted) Navigator.pop(ctx);
               _loadCategories();
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Deleted!'), backgroundColor: Colors.red),
-              );
             },
-            icon: const Icon(Icons.delete, color: Colors.white),
-            label: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: const Text('DELETE'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryCard(Category category) {
-    final subcategories = _subcategoriesMap[category.id] ?? [];
-    final isExpanded = _expandedCategories.contains(category.id);
-    final isSelected = _selectedCategoryId == category.id;
-    
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isSelected ? Colors.teal : Colors.grey.shade200,
-          width: isSelected ? 2 : 1,
-        ),
-        boxShadow: isSelected
-            ? [BoxShadow(color: Colors.teal.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))]
-            : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Material(
-          color: Colors.white,
-          child: Column(
-            children: [
-              // Main Category Header
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedCategoryId = category.id;
-                    if (_expandedCategories.contains(category.id)) {
-                      _expandedCategories.remove(category.id);
-                    } else {
-                      _expandedCategories.add(category.id);
-                    }
-                  });
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // Category Image or Icon
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: category.imageUrl != null && category.imageUrl!.isNotEmpty
-                              ? null
-                              : LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [Colors.teal.shade300, Colors.cyan.shade400],
-                                ),
-                          image: category.imageUrl != null && category.imageUrl!.isNotEmpty
-                              ? DecorationImage(
-                                  image: FileImage(File(category.imageUrl!)),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                        ),
-                        child: category.imageUrl == null || category.imageUrl!.isEmpty
-                            ? const Icon(Icons.folder, color: Colors.white, size: 28)
-                            : null,
-                      ),
-                      const SizedBox(width: 16),
-                      
-                      // Category Info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              category.name,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 4),
-                            if (category.description != null && category.description!.isNotEmpty)
-                              Text(
-                                category.description!,
-                                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            else
-                              Row(
-                                children: [
-                                  Icon(Icons.layers, size: 14, color: Colors.grey.shade400),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${subcategories.length} subcategories',
-                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Action Buttons
-                      IconButton(
-                        icon: Icon(Icons.add, color: Colors.teal.shade400),
-                        tooltip: 'Add Subcategory',
-                        onPressed: () => _showCategoryDialog(parent: category, isSubcategory: true),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.edit, color: Colors.blue.shade400),
-                        tooltip: 'Edit',
-                        onPressed: () => _showCategoryDialog(category: category),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red.shade400),
-                        tooltip: 'Delete',
-                        onPressed: () => _showDeleteConfirmation(category),
-                      ),
-                      if (subcategories.isNotEmpty)
-                        Icon(
-                          isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                          color: Colors.grey.shade400,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              // Subcategories
-              if (isExpanded && subcategories.isNotEmpty)
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    border: Border(top: BorderSide(color: Colors.grey.shade200)),
-                  ),
-                  child: Column(
-                    children: subcategories.map((sub) => _buildSubcategoryTile(sub, category)).toList(),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubcategoryTile(Category sub, Category parent) {
-    return InkWell(
-      onTap: () {},
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            const SizedBox(width: 24),
-            // Subcategory Image or Icon
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: sub.imageUrl != null && sub.imageUrl!.isNotEmpty ? null : Colors.orange.shade100,
-                image: sub.imageUrl != null && sub.imageUrl!.isNotEmpty
-                    ? DecorationImage(
-                        image: FileImage(File(sub.imageUrl!)),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-              ),
-              child: sub.imageUrl == null || sub.imageUrl!.isEmpty
-                  ? Icon(Icons.label, color: Colors.orange.shade700, size: 20)
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            
-            // Subcategory Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(sub.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                  if (sub.description != null && sub.description!.isNotEmpty)
-                    Text(
-                      sub.description!,
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            
-            // Actions
-            IconButton(
-              icon: Icon(Icons.edit, size: 18, color: Colors.blue.shade400),
-              onPressed: () => _showCategoryDialog(category: sub, parent: parent, isSubcategory: true),
-            ),
-            IconButton(
-              icon: Icon(Icons.delete, size: 18, color: Colors.red.shade400),
-              onPressed: () => _showDeleteConfirmation(sub, isSubcategory: true),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -569,122 +169,157 @@ class _CategoryManagementScreenState extends ConsumerState<CategoryManagementScr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.teal.shade50, Colors.white],
-            stops: const [0.0, 0.3],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
+      backgroundColor: AppTheme.appBackground,
+      appBar: AppBar(
+        title: const Text('Inventory Categories'),
+        backgroundColor: AppTheme.surface,
+        surfaceTintColor: Colors.transparent,
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _loadCategories),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : Row(
             children: [
-              // Custom AppBar
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.teal.shade400, Colors.cyan.shade400],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.category, color: Colors.white),
-                    ),
-                    const SizedBox(width: 12),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Manage Categories',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          'Organize your products',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      tooltip: 'Refresh',
-                      onPressed: _loadCategories,
-                    ),
-                  ],
+              // Main Categories Sidebar
+              Container(
+                width: 320,
+                decoration: const BoxDecoration(color: AppTheme.surface, border: Border(right: BorderSide(color: AppTheme.border))),
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _mainCategories.length,
+                  itemBuilder: (context, i) {
+                    final cat = _mainCategories[i];
+                    final active = _selectedCategoryId == cat.id;
+                    return _buildMainCatTile(cat, active);
+                  },
                 ),
               ),
-              
-              // Content
+              // Subcategories Content
               Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _mainCategories.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(24),
-                                  decoration: BoxDecoration(
-                                    color: Colors.teal.shade50,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(Icons.category_outlined, size: 64, color: Colors.teal.shade300),
-                                ),
-                                const SizedBox(height: 24),
-                                const Text(
-                                  'No categories yet',
-                                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Add your first category to organize products',
-                                  style: TextStyle(color: Colors.grey.shade600),
-                                ),
-                                const SizedBox(height: 24),
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.teal,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  onPressed: () => _showCategoryDialog(),
-                                  icon: const Icon(Icons.add),
-                                  label: const Text('Add First Category'),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _mainCategories.length,
-                            itemBuilder: (context, index) => _buildCategoryCard(_mainCategories[index]),
-                          ),
+                child: _selectedCategoryId == null 
+                  ? const Center(child: Text('Select a category to view sub-items'))
+                  : _buildSubcatContent(),
               ),
+            ],
+          ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showCategoryDialog(),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Main Category'),
+        backgroundColor: AppTheme.royalBlue,
+      ),
+    );
+  }
+
+  Widget _buildMainCatTile(Category cat, bool active) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () => setState(() => _selectedCategoryId = cat.id),
+        borderRadius: BorderRadius.circular(AppTheme.r12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: active ? AppTheme.infoSurface : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppTheme.r12),
+            border: Border.all(color: active ? AppTheme.royalBlue.withValues(alpha: 0.2) : Colors.transparent),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(color: active ? AppTheme.royalBlue : AppTheme.surfaceVariant, borderRadius: BorderRadius.circular(AppTheme.r8),
+                  image: cat.imageUrl != null ? DecorationImage(image: FileImage(File(cat.imageUrl!)), fit: BoxFit.cover) : null),
+                child: cat.imageUrl == null ? Icon(Icons.folder_rounded, color: active ? Colors.white : AppTheme.textMuted, size: 20) : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(cat.name, style: TextStyle(fontWeight: active ? FontWeight.w800 : FontWeight.w600, color: active ? AppTheme.royalBlue : AppTheme.textPrimary))),
+              if (active) const Icon(Icons.chevron_right_rounded, color: AppTheme.royalBlue, size: 20),
             ],
           ),
         ),
       ),
-      floatingActionButton: _mainCategories.isNotEmpty
-          ? FloatingActionButton.extended(
-              backgroundColor: Colors.teal,
-              onPressed: () => _showCategoryDialog(),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Category', style: TextStyle(color: Colors.white)),
-            )
-          : null,
+    );
+  }
+
+  Widget _buildSubcatContent() {
+    final cat = _mainCategories.firstWhere((c) => c.id == _selectedCategoryId);
+    final subs = _subcategoriesMap[cat.id] ?? [];
+    
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(cat.name, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+                    Text('${subs.length} Subcategories defined', style: const TextStyle(color: AppTheme.textSecondary)),
+                  ],
+                ),
+                const Spacer(),
+                OutlinedButton.icon(icon: const Icon(Icons.edit_rounded, size: 18), label: const Text('Edit Main'), onPressed: () => _showCategoryDialog(category: cat)),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(icon: const Icon(Icons.add_rounded, size: 18), label: const Text('Add Sub'), onPressed: () => _showCategoryDialog(parent: cat, isSub: true)),
+              ],
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, mainAxisSpacing: 20, crossAxisSpacing: 20, childAspectRatio: 2.5),
+            delegate: SliverChildBuilderDelegate(
+              (ctx, i) => _buildSubcatCard(subs[i], cat),
+              childCount: subs.length,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubcatCard(Category sub, Category parent) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: AppTheme.surface, borderRadius: BorderRadius.circular(AppTheme.r16), border: Border.all(color: AppTheme.border), boxShadow: AppTheme.softShadow),
+      child: Row(
+        children: [
+          Container(
+            width: 50, height: 50,
+            decoration: BoxDecoration(color: AppTheme.surfaceVariant, borderRadius: BorderRadius.circular(AppTheme.r12),
+              image: sub.imageUrl != null ? DecorationImage(image: FileImage(File(sub.imageUrl!)), fit: BoxFit.cover) : null),
+            child: sub.imageUrl == null ? const Icon(Icons.label_important_rounded, color: AppTheme.amberWarning, size: 24) : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(sub.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                if (sub.description != null) Text(sub.description!, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary), maxLines: 1),
+              ],
+            ),
+          ),
+          PopupMenuButton(
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'edit', child: Text('Edit')),
+              const PopupMenuItem(value: 'delete', child: Text('Delete')),
+            ],
+            onSelected: (v) {
+              if (v == 'edit') _showCategoryDialog(category: sub, parent: parent, isSub: true);
+              else _showDelete(sub);
+            },
+          ),
+        ],
+      ),
     );
   }
 }

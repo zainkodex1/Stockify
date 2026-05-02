@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/current_shop_provider.dart';
 import '../../data/repositories/shop_repository.dart';
+import '../shared/app_theme.dart';
 
 class PosSettingsScreen extends ConsumerStatefulWidget {
   const PosSettingsScreen({super.key});
@@ -18,24 +19,20 @@ class _PosSettingsScreenState extends ConsumerState<PosSettingsScreen> {
   late TextEditingController _posFeeController;
   late TextEditingController _discountController;
   
-  // Types: 'percent' or 'fixed'
   String _gstType = 'percent';
   String _taxType = 'percent';
-  String _posFeeType = 'fixed'; // Default to fixed for fees
+  String _posFeeType = 'fixed';
   String _discountType = 'percent';
-
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize with current values from provider
     final shop = ref.read(currentShopProvider);
     _gstController = TextEditingController(text: (shop?['gstRate'] ?? 0).toString());
     _taxController = TextEditingController(text: (shop?['taxRate'] ?? 0).toString());
     _posFeeController = TextEditingController(text: (shop?['posFee'] ?? 0).toString());
     _discountController = TextEditingController(text: (shop?['defaultDiscount'] ?? 0).toString());
-    
     _gstType = shop?['gstType'] ?? 'percent';
     _taxType = shop?['taxType'] ?? 'percent';
     _posFeeType = shop?['posFeeType'] ?? 'fixed';
@@ -54,57 +51,32 @@ class _PosSettingsScreenState extends ConsumerState<PosSettingsScreen> {
   Future<void> _saveSettings() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-
     try {
-      final gst = double.tryParse(_gstController.text) ?? 0;
-      final tax = double.tryParse(_taxController.text) ?? 0;
-      final fee = double.tryParse(_posFeeController.text) ?? 0;
-      final discount = double.tryParse(_discountController.text) ?? 0;
-      
       final currentMap = ref.read(currentShopProvider);
-      final shopEmail = currentMap?['email'] as String?;
-
-      if (shopEmail != null) {
+      final email = currentMap?['email'] as String?;
+      if (email != null) {
         await ref.read(shopRepositoryProvider).updatePosSettings(
-          email: shopEmail,
-          gstRate: gst,
-          taxRate: tax,
-          posFee: fee,
-          defaultDiscount: discount,
-          gstType: _gstType,
-          taxType: _taxType,
-          posFeeType: _posFeeType,
-          discountType: _discountType,
+          email: email, gstRate: double.tryParse(_gstController.text) ?? 0,
+          taxRate: double.tryParse(_taxController.text) ?? 0,
+          posFee: double.tryParse(_posFeeController.text) ?? 0,
+          defaultDiscount: double.tryParse(_discountController.text) ?? 0,
+          gstType: _gstType, taxType: _taxType, posFeeType: _posFeeType, discountType: _discountType,
         );
-
-        // Update local provider so UI reflects changes immediately
-        final updatedMap = Map<String, dynamic>.from(currentMap!);
-        updatedMap['gstRate'] = gst;
-        updatedMap['taxRate'] = tax;
-        updatedMap['posFee'] = fee;
-        updatedMap['defaultDiscount'] = discount;
-        updatedMap['gstType'] = _gstType;
-        updatedMap['taxType'] = _taxType;
-        updatedMap['posFeeType'] = _posFeeType;
-        updatedMap['discountType'] = _discountType;
-        
-        ref.read(currentShopProvider.notifier).setShop(updatedMap);
-
+        final updated = Map<String, dynamic>.from(currentMap!);
+        updated['gstRate'] = double.tryParse(_gstController.text) ?? 0;
+        updated['taxRate'] = double.tryParse(_taxController.text) ?? 0;
+        updated['posFee'] = double.tryParse(_posFeeController.text) ?? 0;
+        updated['defaultDiscount'] = double.tryParse(_discountController.text) ?? 0;
+        updated['gstType'] = _gstType; updated['taxType'] = _taxType;
+        updated['posFeeType'] = _posFeeType; updated['discountType'] = _discountType;
+        ref.read(currentShopProvider.notifier).setShop(updated);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('POS Settings updated successfully')),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('POS Settings updated'), backgroundColor: AppTheme.emeraldSuccess));
           Navigator.pop(context);
         }
-      } else {
-        throw Exception('Shop email not found');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating settings: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.redDanger));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -113,74 +85,54 @@ class _PosSettingsScreenState extends ConsumerState<PosSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage POS Settings'),
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: AppTheme.appBackground,
+      appBar: AppBar(title: const Text('Checkout Configuration'), backgroundColor: AppTheme.surface, surfaceTintColor: Colors.transparent),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(32),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-               _buildCard(
-                 title: 'Tax & GST',
-                 icon: Icons.account_balance,
-                 children: [
-                   _buildConfigField(
-                     controller: _gstController, 
-                     label: 'GST', 
-                     type: _gstType,
-                     onTypeChanged: (val) => setState(() => _gstType = val),
-                   ),
-                   const SizedBox(height: 16),
-                   _buildConfigField(
-                     controller: _taxController, 
-                     label: 'Additional Tax', 
-                     type: _taxType,
-                     onTypeChanged: (val) => setState(() => _taxType = val),
-                   ),
-                 ],
-               ),
-               const SizedBox(height: 16),
-               
-               _buildCard(
-                 title: 'Fees & Discounts',
-                 icon: Icons.settings_applications,
-                 children: [
-                   _buildConfigField(
-                     controller: _posFeeController, 
-                     label: 'POS Fee / Other', 
-                     type: _posFeeType,
-                     onTypeChanged: (val) => setState(() => _posFeeType = val),
-                   ),
-                   const SizedBox(height: 16),
-                   _buildConfigField(
-                     controller: _discountController, 
-                     label: 'Default Discount', 
-                     type: _discountType,
-                     onTypeChanged: (val) => setState(() => _discountType = val),
-                   ),
-                 ],
-               ),
-               
-               const SizedBox(height: 24),
-               SizedBox(
-                 width: double.infinity,
-                 height: 50,
-                 child: ElevatedButton.icon(
-                   onPressed: _isSaving ? null : _saveSettings,
-                   style: ElevatedButton.styleFrom(
-                     backgroundColor: Colors.teal,
-                     foregroundColor: Colors.white,
-                   ),
-                   icon: _isSaving 
-                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                       : const Icon(Icons.save),
-                   label: Text(_isSaving ? 'Saving...' : 'Update Settings', style: const TextStyle(fontSize: 16)),
-                 ),
-               ),
+              const Text('Calculations & Defaults', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+              const Text('Configure how taxes and fees are applied during checkout', style: TextStyle(color: AppTheme.textSecondary)),
+              const SizedBox(height: 32),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _buildGroup(
+                      'Taxes & Levies', Icons.account_balance_rounded, AppTheme.royalBlue,
+                      [
+                        _buildField(_gstController, 'GST / VAT', _gstType, (v) => setState(() => _gstType = v)),
+                        const SizedBox(height: 24),
+                        _buildField(_taxController, 'Extra Service Tax', _taxType, (v) => setState(() => _taxType = v)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 32),
+                  Expanded(
+                    child: _buildGroup(
+                      'Fees & Rewards', Icons.settings_suggest_rounded, AppTheme.tealAccent,
+                      [
+                        _buildField(_posFeeController, 'Fixed POS Service Fee', _posFeeType, (v) => setState(() => _posFeeType = v)),
+                        const SizedBox(height: 24),
+                        _buildField(_discountController, 'Default Store Discount', _discountType, (v) => setState(() => _discountType = v)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: double.infinity, height: 60,
+                child: ElevatedButton.icon(
+                  onPressed: _isSaving ? null : _saveSettings,
+                  icon: _isSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.check_circle_rounded),
+                  label: const Text('APPLY SYSTEM SETTINGS', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.royalBlue, foregroundColor: Colors.white),
+                ),
+              ),
             ],
           ),
         ),
@@ -188,109 +140,71 @@ class _PosSettingsScreenState extends ConsumerState<PosSettingsScreen> {
     );
   }
 
-  Widget _buildCard({required String title, required IconData icon, required List<Widget> children}) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-               children: [
-                 Icon(icon, color: Colors.teal),
-                 const SizedBox(width: 8),
-                 Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-               ],
-            ),
-            const Divider(height: 24),
-            ...children,
-          ],
-        ),
+  Widget _buildGroup(String title, IconData icon, Color color, List<Widget> children) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: AppTheme.surface, borderRadius: BorderRadius.circular(AppTheme.r20), border: Border.all(color: AppTheme.border), boxShadow: AppTheme.softShadow),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppTheme.r8)), child: Icon(icon, color: color, size: 20)),
+              const SizedBox(width: 12),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            ],
+          ),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider()),
+          ...children,
+        ],
       ),
     );
   }
 
-  Widget _buildConfigField({
-    required TextEditingController controller, 
-    required String label, 
-    required String type,
-    required ValueChanged<String> onTypeChanged,
-  }) {
+  Widget _buildField(TextEditingController ctrl, String label, String type, ValueChanged<String> onTypeChg) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-            // Toggle
-            Container(
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildToggleItem('%', type == 'percent', () => onTypeChanged('percent')),
-                  Container(width: 1, height: 20, color: Colors.grey.shade400),
-                  _buildToggleItem('Fixed', type == 'fixed', () => onTypeChanged('fixed')),
-                ],
-              ),
-            ),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.textSecondary)),
+            _buildToggle(type, onTypeChg),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         TextFormField(
-          controller: controller,
+          controller: ctrl,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-          ],
-          decoration: InputDecoration(
-            hintText: 'Enter value',
-            suffixText: type == 'percent' ? '%' : 'PKR',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            filled: true,
-            fillColor: Colors.grey.shade50,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          ),
-          validator: (val) {
-            if (val == null || val.isEmpty) return 'Required';
-            if (double.tryParse(val) == null) return 'Invalid number';
-            return null;
-          },
+          decoration: InputDecoration(suffixText: type == 'percent' ? '%' : 'PKR', filled: true, fillColor: AppTheme.surfaceVariant),
         ),
       ],
     );
   }
 
-  Widget _buildToggleItem(String text, bool isSelected, VoidCallback onTap) {
+  Widget _buildToggle(String type, ValueChanged<String> onChg) {
+    return Container(
+      height: 32, padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(color: AppTheme.surfaceVariant, borderRadius: BorderRadius.circular(AppTheme.r8)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildToggleBtn('%', type == 'percent', () => onChg('percent')),
+          _buildToggleBtn('Fixed', type == 'fixed', () => onChg('fixed')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleBtn(String text, bool active, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.teal : Colors.transparent,
-          borderRadius: BorderRadius.circular(7),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 12,
-          ),
-        ),
+        decoration: BoxDecoration(color: active ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(AppTheme.r6), boxShadow: active ? [const BoxShadow(color: Colors.black12, blurRadius: 2)] : null),
+        child: Text(text, style: TextStyle(color: active ? AppTheme.primaryNavy : AppTheme.textMuted, fontSize: 11, fontWeight: active ? FontWeight.w800 : FontWeight.w500)),
       ),
     );
   }
 }
-
-// Just a quick provider helper for email if not exists globally
-final shopEmailProvider = Provider<String?>((ref) => ref.watch(currentShopProvider)?['email']);

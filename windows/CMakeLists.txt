@@ -32,6 +32,12 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
+# Force MSVCRTD over MSVCRT for Debug builds to prevent LNK2001 errors 
+# caused by linking release libraries (like firebase_cpp_sdk or pdfium) 
+# which pull in MSVCRT and mask MSVCRTD symbols (like __imp__CrtDbgReport).
+set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:msvcrt.lib /DEFAULTLIB:msvcrtd.lib")
+set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:msvcrt.lib /DEFAULTLIB:msvcrtd.lib")
+
 # Compilation settings that should be applied to most targets.
 #
 # Be cautious about adding new options here, as plugins use this function by

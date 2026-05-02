@@ -3,11 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/customer_repository.dart';
 import '../../data/database/database.dart';
+import '../shared/app_theme.dart';
 
 class CustomerEntryDialog extends ConsumerStatefulWidget {
   final Customer? initialCustomer;
-
-  const CustomerEntryDialog({super.key, this.initialCustomer});
+  final String? initialName;
+  const CustomerEntryDialog({super.key, this.initialCustomer, this.initialName});
 
   @override
   ConsumerState<CustomerEntryDialog> createState() => _CustomerEntryDialogState();
@@ -28,9 +29,15 @@ class _CustomerEntryDialogState extends ConsumerState<CustomerEntryDialog> {
     if (widget.initialCustomer != null) {
       _nameController.text = widget.initialCustomer!.name;
       _phoneController.text = widget.initialCustomer!.phoneNumber ?? '';
+    } else if (widget.initialName != null) {
+      _nameController.text = widget.initialName!;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _nameFocus.requestFocus();
+      if (widget.initialName != null && widget.initialName!.isNotEmpty) {
+        _phoneFocus.requestFocus();
+      } else {
+        _nameFocus.requestFocus();
+      }
     });
   }
 
@@ -44,43 +51,27 @@ class _CustomerEntryDialogState extends ConsumerState<CustomerEntryDialog> {
   }
 
   Future<void> _searchCustomers(String query) async {
-    if (query.isEmpty) {
-      setState(() {
-        _isSearching = false;
-        _searchResults = [];
-      });
-      return;
-    }
-
+    if (query.isEmpty) { setState(() { _isSearching = false; _searchResults = []; }); return; }
     setState(() => _isSearching = true);
-    final repo = ref.read(customerRepositoryProvider);
-    final results = await repo.searchCustomers(query);
-    setState(() {
-      _searchResults = results;
-      _isSearching = false;
-    });
+    final results = await ref.read(customerRepositoryProvider).searchCustomers(query);
+    setState(() { _searchResults = results; _isSearching = false; });
   }
 
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
-
-    final repo = ref.read(customerRepositoryProvider);
-    final customer = await repo.createOrGetCustomer(
+    final customer = await ref.read(customerRepositoryProvider).createOrGetCustomer(
       _nameController.text.trim(),
       _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
     );
-
-    if (context.mounted) {
-      Navigator.pop(context, customer);
-    }
+    if (context.mounted) Navigator.pop(context, customer);
   }
 
   @override
   Widget build(BuildContext context) {
     return Shortcuts(
       shortcuts: {
-        LogicalKeySet(LogicalKeyboardKey.enter): _SubmitIntent(),
-        LogicalKeySet(LogicalKeyboardKey.escape): _CancelIntent(),
+        LogicalKeySet(LogicalKeyboardKey.enter): const _SubmitIntent(),
+        LogicalKeySet(LogicalKeyboardKey.escape): const _CancelIntent(),
       },
       child: Actions(
         actions: {
@@ -90,120 +81,68 @@ class _CustomerEntryDialogState extends ConsumerState<CustomerEntryDialog> {
         child: Focus(
           autofocus: true,
           child: Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.r20)),
+            clipBehavior: Clip.antiAlias,
             child: Container(
-              width: 500,
-              padding: const EdgeInsets.all(24),
+              width: 450,
+              color: AppTheme.surface,
               child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Customer Information',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.teal),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close),
-                          tooltip: 'Close (Esc)',
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 30),
-                    TextFormField(
-                      controller: _nameController,
-                      focusNode: _nameFocus,
-                      decoration: const InputDecoration(
-                        labelText: 'Customer Name *',
-                        prefixIcon: Icon(Icons.person),
-                        hintText: 'Enter customer name',
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.person_add_rounded, color: Colors.white, size: 24),
+                          const SizedBox(width: 12),
+                          const Text('Customer Identity', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+                          const Spacer(),
+                          IconButton(icon: const Icon(Icons.close_rounded, color: Colors.white70), onPressed: () => Navigator.pop(context)),
+                        ],
                       ),
-                      validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
-                      textInputAction: TextInputAction.next,
-                      onFieldSubmitted: (_) => _phoneFocus.requestFocus(),
-                      onChanged: (value) {
-                        if (value.length > 2) {
-                          _searchCustomers(value);
-                        }
-                      },
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _phoneController,
-                      focusNode: _phoneFocus,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone Number (Optional)',
-                        prefixIcon: Icon(Icons.phone),
-                        hintText: 'Enter phone number',
-                      ),
-                      keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _handleSubmit(),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(15),
-                      ],
-                    ),
-                    if (_isSearching)
-                      const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    else if (_searchResults.isNotEmpty && _nameController.text.length > 2)
-                      Container(
-                        margin: const EdgeInsets.only(top: 16),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        constraints: const BoxConstraints(maxHeight: 200),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: _searchResults.length,
-                          itemBuilder: (context, index) {
-                            final customer = _searchResults[index];
-                            return ListTile(
-                              leading: const Icon(Icons.person),
-                              title: Text(customer.name),
-                              subtitle: customer.phoneNumber != null
-                                  ? Text(customer.phoneNumber!)
-                                  : null,
-                              onTap: () {
-                                _nameController.text = customer.name;
-                                _phoneController.text = customer.phoneNumber ?? '';
-                                setState(() {
-                                  _searchResults = [];
-                                });
-                                Navigator.pop(context, customer);
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel (Esc)'),
-                        ),
-                        const SizedBox(width: 16),
-                        ElevatedButton(
-                          onPressed: _handleSubmit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _nameController,
+                            focusNode: _nameFocus,
+                            decoration: const InputDecoration(labelText: 'Customer Full Name *', prefixIcon: Icon(Icons.person_rounded, size: 20)),
+                            validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
+                            onChanged: (v) => v.length > 2 ? _searchCustomers(v) : null,
+                            onFieldSubmitted: (_) => _phoneFocus.requestFocus(),
                           ),
-                          child: const Text('Add Customer (Enter)'),
-                        ),
-                      ],
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _phoneController,
+                            focusNode: _phoneFocus,
+                            decoration: const InputDecoration(labelText: 'Mobile Number (Optional)', prefixIcon: Icon(Icons.phone_rounded, size: 20)),
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(15)],
+                            onFieldSubmitted: (_) => _handleSubmit(),
+                          ),
+                          
+                          if (_isSearching)
+                            const Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(strokeWidth: 2))
+                          else if (_searchResults.isNotEmpty && _nameController.text.length > 2)
+                            _buildSearchResults(),
+                          
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: _handleSubmit,
+                              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.royalBlue, foregroundColor: Colors.white),
+                              child: const Text('CONFIRM CUSTOMER (Enter)', style: TextStyle(fontWeight: FontWeight.w800)),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -214,14 +153,29 @@ class _CustomerEntryDialogState extends ConsumerState<CustomerEntryDialog> {
       ),
     );
   }
+
+  Widget _buildSearchResults() {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(color: AppTheme.surfaceVariant, borderRadius: BorderRadius.circular(AppTheme.r12), border: Border.all(color: AppTheme.border)),
+      constraints: const BoxConstraints(maxHeight: 150),
+      child: ListView.separated(
+        shrinkWrap: true,
+        itemCount: _searchResults.length,
+        separatorBuilder: (_, __) => const Divider(height: 1),
+        itemBuilder: (context, i) {
+          final c = _searchResults[i];
+          return ListTile(
+            dense: true,
+            title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+            subtitle: c.phoneNumber != null ? Text(c.phoneNumber!) : null,
+            onTap: () => Navigator.pop(context, c),
+          );
+        },
+      ),
+    );
+  }
 }
 
-class _SubmitIntent extends Intent {
-  const _SubmitIntent();
-}
-
-class _CancelIntent extends Intent {
-  const _CancelIntent();
-}
-
-
+class _SubmitIntent extends Intent { const _SubmitIntent(); }
+class _CancelIntent extends Intent { const _CancelIntent(); }

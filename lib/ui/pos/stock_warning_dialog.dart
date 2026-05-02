@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
+import '../shared/app_theme.dart';
 
-/// Result of the stock warning dialog
 class StockWarningResult {
   final bool proceed;
   final bool dontShowAgain;
-  
-  const StockWarningResult({
-    required this.proceed,
-    required this.dontShowAgain,
-  });
+  const StockWarningResult({required this.proceed, required this.dontShowAgain});
 }
 
-/// Professional dialog shown when adding items with low or zero stock
 class StockWarningDialog extends StatefulWidget {
   final String productName;
   final int availableStock;
@@ -26,11 +21,6 @@ class StockWarningDialog extends StatefulWidget {
     required this.alreadyInCart,
   });
 
-  int get totalRequested => alreadyInCart + requestedQuantity;
-  int get shortage => totalRequested - availableStock;
-  bool get isOutOfStock => availableStock <= 0;
-  bool get willExceedStock => totalRequested > availableStock;
-
   static Future<StockWarningResult?> show(
     BuildContext context, {
     required String productName,
@@ -38,7 +28,7 @@ class StockWarningDialog extends StatefulWidget {
     required int requestedQuantity,
     required int alreadyInCart,
   }) async {
-    final result = await showDialog<StockWarningResult>(
+    return await showDialog<StockWarningResult>(
       context: context,
       barrierDismissible: false,
       builder: (context) => StockWarningDialog(
@@ -48,7 +38,6 @@ class StockWarningDialog extends StatefulWidget {
         alreadyInCart: alreadyInCart,
       ),
     );
-    return result;
   }
 
   @override
@@ -65,219 +54,126 @@ class _StockWarningDialogState extends State<StockWarningDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isOutOfStock ? Colors.red.shade100 : Colors.orange.shade100,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isOutOfStock ? Icons.remove_shopping_cart : Icons.warning_amber_rounded,
-              color: isOutOfStock ? Colors.red.shade700 : Colors.orange.shade700,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            isOutOfStock ? 'Out of Stock' : 'Low Stock Warning',
-            style: TextStyle(
-              color: isOutOfStock ? Colors.red.shade700 : Colors.orange.shade700,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-      content: SizedBox(
-        width: 380,
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.r20)),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        width: 400,
+        color: AppTheme.surface,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product Name
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
+                gradient: isOutOfStock 
+                  ? const LinearGradient(colors: [AppTheme.redDanger, Color(0xFF991B1B)])
+                  : const LinearGradient(colors: [AppTheme.amberWarning, Color(0xFF92400E)]),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.medication, color: Colors.teal),
+                  Icon(isOutOfStock ? Icons.report_gmailerrorred_rounded : Icons.warning_amber_rounded, color: Colors.white, size: 28),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      widget.productName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
+                  Text(isOutOfStock ? 'OUT OF STOCK' : 'LOW STOCK ALERT', 
+                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Stock Details
-            _buildStockRow(
-              'Available Stock',
-              '${widget.availableStock} units',
-              widget.availableStock > 0 ? Colors.green : Colors.red,
-              Icons.inventory_2,
-            ),
-            const SizedBox(height: 8),
-            if (widget.alreadyInCart > 0) ...[
-              _buildStockRow(
-                'Already in Cart',
-                '${widget.alreadyInCart} units',
-                Colors.blue,
-                Icons.shopping_cart,
-              ),
-              const SizedBox(height: 8),
-            ],
-            _buildStockRow(
-              'Adding',
-              '${widget.requestedQuantity} unit(s)',
-              Colors.teal,
-              Icons.add_circle,
-            ),
-            
-            if (willExceedStock) ...[
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Shortage: $shortage unit(s) will be oversold',
-                        style: TextStyle(
-                          color: Colors.red.shade700,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.shade200),
-              ),
-              child: Row(
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, color: Colors.amber.shade800, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'You can still proceed with billing. Stock will be updated after checkout.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.amber.shade900,
-                      ),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: AppTheme.surfaceVariant, borderRadius: BorderRadius.circular(AppTheme.r12)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.inventory_2_rounded, color: AppTheme.textMuted, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(widget.productName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15))),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            
-            // Don't show again checkbox
-            const SizedBox(height: 16),
-            InkWell(
-              onTap: () => setState(() => _dontShowAgain = !_dontShowAgain),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Checkbox(
-                        value: _dontShowAgain,
-                        onChanged: (v) => setState(() => _dontShowAgain = v ?? false),
-                        activeColor: Colors.teal,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        "Don't show this warning again for this product",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade700,
-                        ),
+                  const SizedBox(height: 24),
+                  _buildStatRow('Current Stock', '${widget.availableStock} Units', isOutOfStock ? AppTheme.redDanger : AppTheme.amberWarning),
+                  _buildStatRow('In Cart', '${widget.alreadyInCart} Units', AppTheme.royalBlue),
+                  _buildStatRow('Adding Now', '${widget.requestedQuantity} Units', AppTheme.tealAccent),
+                  
+                  if (willExceedStock) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: AppTheme.dangerSurface, borderRadius: BorderRadius.circular(AppTheme.r12), border: Border.all(color: AppTheme.redDanger.withValues(alpha: 0.2))),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded, color: AppTheme.redDanger, size: 18),
+                          const SizedBox(width: 10),
+                          Text('Shortage of $shortage unit(s)', style: const TextStyle(color: AppTheme.redDanger, fontWeight: FontWeight.w700, fontSize: 13)),
+                        ],
                       ),
                     ),
                   ],
-                ),
+                  
+                  const SizedBox(height: 24),
+                  InkWell(
+                    onTap: () => setState(() => _dontShowAgain = !_dontShowAgain),
+                    child: Row(
+                      children: [
+                        Checkbox(
+                          value: _dontShowAgain, 
+                          onChanged: (v) => setState(() => _dontShowAgain = v ?? false),
+                          activeColor: isOutOfStock ? AppTheme.redDanger : AppTheme.amberWarning,
+                        ),
+                        const Expanded(child: Text('Don\'t warn me again for this item', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary))),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context, const StockWarningResult(proceed: false, dontShowAgain: false)),
+                          child: const Text('CANCEL'),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context, StockWarningResult(proceed: true, dontShowAgain: _dontShowAgain)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isOutOfStock ? AppTheme.redDanger : AppTheme.amberWarning,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('ADD ANYWAY', style: TextStyle(fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, const StockWarningResult(proceed: false, dontShowAgain: false)),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton.icon(
-          onPressed: () => Navigator.pop(context, StockWarningResult(proceed: true, dontShowAgain: _dontShowAgain)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.teal,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-          icon: const Icon(Icons.add_shopping_cart, size: 18),
-          label: const Text('Add Anyway'),
-        ),
-      ],
     );
   }
 
-  Widget _buildStockRow(String label, String value, Color color, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 8),
-        Text(label, style: const TextStyle(color: Colors.grey)),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+  Widget _buildStatRow(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppTheme.rPill)),
+            child: Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 13)),
           ),
-          child: Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

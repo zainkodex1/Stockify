@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:file_picker/file_picker.dart';
@@ -8,6 +9,7 @@ import '../../data/repositories/user_repository.dart';
 import '../../data/repositories/shop_repository.dart';
 import '../../data/providers/current_shop_provider.dart';
 import '../../data/database/database.dart';
+import '../shared/app_theme.dart';
 import 'category_management_screen.dart';
 import 'pos_settings_screen.dart';
 import 'product_form_settings_screen.dart';
@@ -20,7 +22,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  // Business Info Controllers
   final _businessNameController = TextEditingController();
   final _ownerNameController = TextEditingController();
   final _addressController = TextEditingController();
@@ -31,7 +32,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    // Load data after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadBusinessData());
   }
 
@@ -52,7 +52,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final businessData = ref.read(currentShopProvider);
     if (businessData == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No business data available'), backgroundColor: Colors.red)
+        const SnackBar(content: Text('No business data available'), backgroundColor: AppTheme.redDanger)
       );
       return;
     }
@@ -69,7 +69,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         address: _addressController.text.trim(),
       );
 
-      // Update the local provider
       final updatedData = Map<String, dynamic>.from(businessData);
       updatedData['shopName'] = _businessNameController.text.trim();
       updatedData['ownerName'] = _ownerNameController.text.trim();
@@ -79,13 +78,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Business information updated!'), backgroundColor: Colors.green)
+          const SnackBar(content: Text('Business information updated!'), backgroundColor: AppTheme.emeraldSuccess)
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red)
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.redDanger)
         );
       }
     } finally {
@@ -98,249 +97,175 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final userRepo = ref.watch(userRepositoryProvider);
     final businessData = ref.watch(currentShopProvider);
 
-    // Reload data if provider changed
     if (businessData != null && !_dataLoaded) {
       _loadBusinessData();
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings & Administration')),
+      backgroundColor: AppTheme.appBackground,
+      appBar: AppBar(
+        title: const Text('Settings & Configuration'),
+        backgroundColor: AppTheme.surface,
+        surfaceTintColor: Colors.transparent,
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Business Information Section
-            _buildSectionHeader('Business Information'),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    if (businessData != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.teal.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const CircleAvatar(
-                              backgroundColor: Colors.teal,
-                              child: Icon(Icons.business, color: Colors.white),
+            // Business Section
+            _buildSectionHeader('Business Identity'),
+            _buildSettingsCard(
+              child: Column(
+                children: [
+                  if (businessData != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.infoSurface,
+                        borderRadius: BorderRadius.circular(AppTheme.r12),
+                      ),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            backgroundColor: AppTheme.royalBlue,
+                            child: Icon(Icons.business_rounded, color: Colors.white, size: 20),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(businessData['shopName'] ?? 'Store Name', 
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                                Text(businessData['email'] ?? '', 
+                                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                              ],
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    businessData['shopName'] ?? 'Business',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  Text(
-                                    businessData['email'] ?? '',
-                                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.verified, color: Colors.teal),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ] else ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.warning, color: Colors.orange),
-                            SizedBox(width: 8),
-                            Expanded(child: Text('No business data loaded. Please login again.')),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    TextField(
-                      controller: _businessNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Business Name',
-                        prefixIcon: Icon(Icons.business),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _ownerNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Owner Name',
-                        prefixIcon: Icon(Icons.person),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone Number',
-                        prefixIcon: Icon(Icons.phone),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(
-                        labelText: 'Address',
-                        prefixIcon: Icon(Icons.location_on),
-                      ),
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isUpdating ? null : _updateBusinessInfo,
-                        icon: _isUpdating 
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.save),
-                        label: const Text('Save Business Information'),
-                      ),
-                    ),
+                    const SizedBox(height: 24),
                   ],
-                ),
+                  _buildTextField(_businessNameController, 'Store Name', Icons.business_rounded),
+                  const SizedBox(height: 16),
+                  _buildTextField(_ownerNameController, 'Owner Full Name', Icons.person_rounded),
+                  const SizedBox(height: 16),
+                  _buildTextField(_phoneController, 'Contact Number', Icons.phone_rounded),
+                  const SizedBox(height: 16),
+                  _buildTextField(_addressController, 'Physical Address', Icons.location_on_rounded, maxLines: 2),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: _isUpdating ? null : _updateBusinessInfo,
+                      icon: _isUpdating 
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.save_rounded, size: 18),
+                      label: const Text('SAVE BUSINESS INFO', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1)),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.royalBlue, foregroundColor: Colors.white),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 30),
             
-            // Inventory Settings Section
-            _buildSectionHeader('Inventory Settings'),
-            Card(
-              child: ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.purple.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.category, color: Colors.purple),
-                ),
-                title: const Text('Manage Categories'),
-                subtitle: const Text('Add custom categories & subcategories'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CategoryManagementScreen()),
-                  );
-                },
-              ),
+            const SizedBox(height: 40),
+            _buildSectionHeader('Application Modules'),
+            _buildClickableSetting(
+              title: 'Manage Categories',
+              subtitle: 'Customize inventory categorization layers',
+              icon: Icons.category_rounded,
+              color: Colors.purple,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryManagementScreen())),
             ),
-            Card(
-              child: ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.point_of_sale, color: Colors.blue),
-                ),
-                title: const Text('Manage POS'),
-                subtitle: const Text('Configure Defaults (Tax, GST, Fees, Discount)'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const PosSettingsScreen()),
-                  );
-                },
-              ),
+            _buildClickableSetting(
+              title: 'POS Configuration',
+              subtitle: 'Set defaults for taxes, fees, and discounts',
+              icon: Icons.point_of_sale_rounded,
+              color: AppTheme.royalBlue,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PosSettingsScreen())),
             ),
-            Card(
-              child: ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.teal.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.input, color: Colors.teal),
-                ),
-                title: const Text('Product Entry Form'),
-                subtitle: const Text('Customize fields (Hide/Show)'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ProductFormSettingsScreen()),
-                  );
-                },
-              ),
+            _buildClickableSetting(
+              title: 'Dynamic Entry Form',
+              subtitle: 'Toggle visibility of product input fields',
+              icon: Icons.edit_note_rounded,
+              color: AppTheme.tealAccent,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductFormSettingsScreen())),
             ),
-            const SizedBox(height: 30),
-            
-            _buildSectionHeader('Data Management'),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.backup),
-                title: const Text('Backup Database'),
-                subtitle: const Text('Save a copy of your data'),
-                trailing: ElevatedButton(
-                  onPressed: _backupDatabase,
-                  child: const Text('Backup'),
-                ),
-              ),
-            ),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.restore),
-                title: const Text('Restore Database'),
-                subtitle: const Text('Restore from a backup file'),
-                trailing: ElevatedButton(
-                  onPressed: _restoreDatabase,
-                  child: const Text('Restore'),
-                ),
-              ),
-            ),
-            const SizedBox(height: 30),
 
-            _buildSectionHeader('User Management'),
+            const SizedBox(height: 40),
+            _buildSectionHeader('Data Integrity'),
+            Wrap(
+              spacing: 20,
+              runSpacing: 20,
+              children: [
+                SizedBox(
+                  width: 300,
+                  child: _buildDataAction(
+                    'Backup Data', 
+                    'Secure a local snapshot', 
+                    Icons.cloud_upload_rounded, 
+                    AppTheme.royalBlue, 
+                    _backupDatabase
+                  ),
+                ),
+                SizedBox(
+                  width: 300,
+                  child: _buildDataAction(
+                    'Restore Data', 
+                    'Load previous snapshots', 
+                    Icons.history_rounded, 
+                    AppTheme.amberWarning, 
+                    _restoreDatabase
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 40),
+            _buildSectionHeader('User Governance'),
             FutureBuilder<List<User>>(
               future: userRepo.getAllUsers(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) return const CircularProgressIndicator();
-                final users = snapshot.data!;
-                return Card(
+                final users = snapshot.data ?? [];
+                return _buildSettingsCard(
                   child: Column(
                     children: [
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: users.length,
-                        itemBuilder: (context, index) {
-                          final user = users[index];
-                          return ListTile(
-                            leading: CircleAvatar(child: Text(user.username[0].toUpperCase())),
-                            title: Text(user.username),
-                            subtitle: Text(user.role),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {},
-                            ),
-                          );
-                        },
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add User'),
-                          onPressed: () => _showAddUserDialog(context, userRepo),
+                      if (users.isEmpty) 
+                        const Padding(padding: EdgeInsets.all(20), child: Text('No other users configured'))
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: users.length,
+                          separatorBuilder: (_, __) => const Divider(),
+                          itemBuilder: (context, index) {
+                            final user = users[index];
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: CircleAvatar(
+                                backgroundColor: AppTheme.infoSurface,
+                                child: Text(user.username[0].toUpperCase(), style: const TextStyle(color: AppTheme.royalBlue, fontWeight: FontWeight.bold)),
+                              ),
+                              title: Text(user.username, style: const TextStyle(fontWeight: FontWeight.w700)),
+                              subtitle: Text(user.role, style: const TextStyle(fontSize: 12)),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete_outline_rounded, color: AppTheme.redDanger, size: 20),
+                                onPressed: () {},
+                              ),
+                            );
+                          },
+                        ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text('REGISTER NEW USER'),
+                        onPressed: () => _showAddUserDialog(context, userRepo),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 48),
                         ),
                       ),
                     ],
@@ -348,6 +273,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 );
               },
             ),
+            const SizedBox(height: 60),
           ],
         ),
       ),
@@ -356,8 +282,74 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10.0),
-      child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.teal)),
+      padding: const EdgeInsets.only(left: 4, bottom: 16),
+      child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.primaryNavy)),
+    );
+  }
+
+  Widget _buildSettingsCard({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.r20),
+        border: Border.all(color: AppTheme.border),
+        boxShadow: AppTheme.softShadow,
+      ),
+      child: child,
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {int maxLines = 1}) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20),
+      ),
+    );
+  }
+
+  Widget _buildClickableSetting({required String title, required String subtitle, required IconData icon, required Color color, required VoidCallback onTap}) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppTheme.r12)),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+        trailing: const Icon(Icons.chevron_right_rounded, color: AppTheme.textMuted),
+        onTap: onTap,
+      ),
+    );
+  }
+
+  Widget _buildDataAction(String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppTheme.r16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(AppTheme.r16),
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 32),
+            const SizedBox(height: 12),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary), textAlign: TextAlign.center),
+          ],
+        ),
+      ),
     );
   }
 
@@ -368,21 +360,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final dbFile = File(dbPath);
 
       String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Save Backup',
-        fileName: 'pharmacy_backup_${DateTime.now().millisecondsSinceEpoch}.sqlite',
+        dialogTitle: 'Export System Backup',
+        fileName: 'stockify_backup_${intl.DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.sqlite',
       );
 
       if (outputFile != null) {
         await dbFile.copy(outputFile);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup Successful!')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: const Text('Database backup exported successfully!'),
+            backgroundColor: AppTheme.emeraldSuccess,
+          ));
+        }
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Backup Failed: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Backup Failed: $e'), backgroundColor: AppTheme.redDanger));
     }
   }
 
   Future<void> _restoreDatabase() async {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restore requires app restart. Feature pending.')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Database restoration logic pending safety validation.')));
   }
 
   void _showAddUserDialog(BuildContext context, UserRepository userRepo) {
@@ -393,22 +390,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add User'),
+        title: const Text('Register New User'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: usernameController, decoration: const InputDecoration(labelText: 'Username')),
-            TextField(controller: passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+            _buildTextField(usernameController, 'Username', Icons.person_outline_rounded),
+            const SizedBox(height: 16),
+            _buildTextField(passwordController, 'Password', Icons.lock_outline_rounded),
+            const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: role,
               items: ['Admin', 'Manager', 'Cashier'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
               onChanged: (v) => role = v!,
-              decoration: const InputDecoration(labelText: 'Role'),
+              decoration: const InputDecoration(labelText: 'System Role', prefixIcon: Icon(Icons.admin_panel_settings_rounded, size: 20)),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
           ElevatedButton(
             onPressed: () async {
               if (usernameController.text.isNotEmpty && passwordController.text.isNotEmpty) {
@@ -417,7 +416,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 setState(() {});
               }
             },
-            child: const Text('Add'),
+            child: const Text('REGISTER USER'),
           ),
         ],
       ),
