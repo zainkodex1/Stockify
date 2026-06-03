@@ -13,6 +13,7 @@ import '../shared/app_theme.dart';
 import 'category_management_screen.dart';
 import 'pos_settings_screen.dart';
 import 'inventory_flow_settings_screen.dart';
+import 'custom_fields_settings_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -194,6 +195,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.edit_note_rounded,
               color: AppTheme.tealAccent,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InventoryFlowSettingsScreen())),
+            ),
+            _buildClickableSetting(
+              title: 'Custom Fields Configuration',
+              subtitle: 'Define business-specific attributes',
+              icon: Icons.format_list_bulleted_add,
+              color: AppTheme.emeraldSuccess,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomFieldsSettingsScreen())),
             ),
 
             const SizedBox(height: 40),

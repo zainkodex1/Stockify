@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../data/database/database.dart';
+import '../../../core/config/custom_field_service.dart';
+import '../../../data/providers/current_shop_provider.dart';
 import '../cart_provider.dart';
 import '../../shared/app_theme.dart';
 import 'payment_section.dart';
@@ -167,7 +171,7 @@ class _CustomerSummary extends StatelessWidget {
   }
 }
 
-class _CartItemRow extends StatelessWidget {
+class _CartItemRow extends ConsumerWidget {
   const _CartItemRow({
     required this.item,
     required this.onIncrease,
@@ -183,8 +187,12 @@ class _CartItemRow extends StatelessWidget {
   final bool isSelected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final hasWarning = item.hasStockWarning;
+    
+    final shopData = ref.watch(currentShopProvider);
+    final bizType = shopData?['businessType'] as String? ?? 'General';
+    final customService = ref.watch(customFieldServiceProvider);
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -218,6 +226,48 @@ class _CartItemRow extends StatelessWidget {
                     Text(
                       '${item.selectedUnit.name} @ PKR ${item.selectedUnit.salePrice.toStringAsFixed(0)}',
                       style: const TextStyle(fontSize: 9, color: AppTheme.textMuted, fontWeight: FontWeight.w600),
+                    ),
+                    
+                    // FutureBuilder for Cart Custom Fields
+                    FutureBuilder<List<CustomFieldValue>>(
+                      future: customService.getValues('product', item.medicine.id),
+                      builder: (context, valSnap) {
+                        if (!valSnap.hasData || valSnap.data!.isEmpty) return const SizedBox.shrink();
+                        return FutureBuilder<List<CustomFieldDefinition>>(
+                          future: customService.getActiveProductFields(bizType),
+                          builder: (context, defSnap) {
+                            if (!defSnap.hasData) return const SizedBox.shrink();
+                            final cartDefs = defSnap.data!.where((d) => d.showInCart).toList();
+                            if (cartDefs.isEmpty) return const SizedBox.shrink();
+                            
+                            final List<String> labels = [];
+                            for (final def in cartDefs) {
+                              final matchingVals = valSnap.data!.where((v) => v.definitionId == def.id);
+                              if (matchingVals.isEmpty) continue;
+                              final val = matchingVals.first;
+                              final String valStr;
+                              if (val.valueBool == true) {
+                                valStr = 'Yes';
+                              } else if (val.valueBool == false) {
+                                valStr = ''; // Don't show unchecked booleans
+                              } else {
+                                valStr = val.valueText?.trim() ?? val.valueNumber?.toString() ?? '';
+                              }
+                              if (valStr.isNotEmpty) labels.add('${def.fieldLabel}: $valStr');
+                            }
+                            if (labels.isEmpty) return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                labels.join(' \u2022 '),
+                                style: const TextStyle(fontSize: 8, color: AppTheme.textSecondary),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }
+                        );
+                      }
                     ),
                   ],
                 ),

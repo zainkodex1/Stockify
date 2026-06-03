@@ -6,11 +6,13 @@ import '../../data/repositories/sale_repository.dart';
 import '../../data/repositories/medicine_repository.dart';
 import '../../data/providers/current_shop_provider.dart';
 import '../../data/database/database.dart';
+import 'dart:convert';
 import 'package:printing/printing.dart';
 import '../sales/sale_pdf_generator.dart';
 import '../sales/receipt_preview_screen.dart';
 import '../shared/app_theme.dart';
 import 'cart_provider.dart';
+import '../../core/config/custom_field_service.dart';
 
 class CheckoutDialog extends ConsumerStatefulWidget {
   final double? initialAmount;
@@ -83,8 +85,41 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
     
     try {
       final saleRepo = ref.read(saleRepositoryProvider);
-      final medicineRepo = ref.read(medicineRepositoryProvider);
       final shopData = ref.read(currentShopProvider);
+      final customService = ref.read(customFieldServiceProvider);
+
+      // Snapshot Custom Fields for Invoice
+      final bizType = shopData?['businessType'] as String? ?? 'General';
+      final activeDefs = await customService.getActiveProductFields(bizType);
+      
+      Map<int, String> itemSnapshots = {};
+      for (final item in cart.items) {
+        final values = await customService.getValues('product', item.medicine.id);
+        List<Map<String, dynamic>> snapshotData = [];
+        for (final val in values) {
+          try {
+            final def = activeDefs.firstWhere((d) => d.id == val.definitionId);
+            if (def.showInInvoice) {
+              // Resolve the display value
+              String displayVal;
+              if (val.valueBool == true) {
+                displayVal = 'Yes';
+              } else if (val.valueBool == false) {
+                displayVal = ''; // Don't print unchecked booleans
+              } else {
+                displayVal = val.valueText?.trim() ?? val.valueNumber?.toString() ?? '';
+              }
+              // Only add if the value is meaningful
+              if (displayVal.isNotEmpty && displayVal != 'null') {
+                snapshotData.add({'label': def.fieldLabel, 'value': displayVal});
+              }
+            }
+          } catch (_) {}
+        }
+        if (snapshotData.isNotEmpty) {
+          itemSnapshots[item.batch.id] = jsonEncode(snapshotData);
+        }
+      }
       
       final saleId = await saleRepo.createSale(
         SalesCompanion(
@@ -105,6 +140,7 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
           total: drift.Value(item.total),
           unitName: drift.Value(item.selectedUnit.name),
           conversionFactor: drift.Value(item.selectedUnit.conversionFactor),
+          customFieldsJson: drift.Value(itemSnapshots[item.batch.id]),
         )).toList(),
       );
       
@@ -136,6 +172,7 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
           total: i.total,
           unitName: i.selectedUnit.name,
           conversionFactor: i.selectedUnit.conversionFactor,
+          customFieldsJson: itemSnapshots[i.batch.id],
         )).toList(),
         medicines: cart.items.map((i) => i.medicine).toList(),
         customer: cart.customer,

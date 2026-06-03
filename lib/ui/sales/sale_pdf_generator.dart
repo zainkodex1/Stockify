@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
+import 'dart:convert';
 import '../../data/database/database.dart';
 
 class SalePdfGenerator {
@@ -193,11 +194,29 @@ class SalePdfGenerator {
                                     medicine?.name ?? 'Item', 
                                     style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
                                   ),
-                                  if (item.unitName != null)
+                                  // Only show unit if it is not null, not the base 'Unit', and not 'Piece'
+                                  if (item.unitName != null && item.unitName!.isNotEmpty && item.unitName != 'Unit' && item.unitName != 'Piece')
                                     pw.Text(
                                       'Unit: ${item.unitName}', 
                                       style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700),
                                     ),
+                                  // Custom field snapshot: only print fields with non-empty values
+                                  if (item.customFieldsJson != null && item.customFieldsJson!.isNotEmpty)
+                                    ...() {
+                                      try {
+                                        final List<dynamic> fields = jsonDecode(item.customFieldsJson!);
+                                        final validFields = fields.where((f) {
+                                          final val = (f['value'] as String?)?.trim() ?? '';
+                                          return val.isNotEmpty && val != 'null' && val != 'false';
+                                        }).toList();
+                                        return validFields.map((f) => pw.Text(
+                                          '${f['label']}: ${f['value']}',
+                                          style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700),
+                                        )).toList();
+                                      } catch (_) {
+                                        return <pw.Widget>[];
+                                      }
+                                    }(),
                                 ],
                               ),
                             ),

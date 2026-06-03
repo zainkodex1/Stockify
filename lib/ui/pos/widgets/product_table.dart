@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/database/database.dart';
 import '../../../data/repositories/medicine_repository.dart';
+import '../../../data/repositories/settings_repository.dart';
+import '../../../data/providers/current_shop_provider.dart';
+import '../../../core/config/custom_field_service.dart';
+import '../../../core/utils/stock_helpers.dart';
 import '../cart_provider.dart';
 import '../../shared/app_theme.dart';
 
@@ -104,7 +109,7 @@ class _H extends StatelessWidget {
 
 // ─── Product Row ──────────────────────────────────────────────────────────────
 
-class _ProductRow extends StatefulWidget {
+class _ProductRow extends ConsumerStatefulWidget {
   const _ProductRow({
     required this.medicine,
     required this.repo,
@@ -120,10 +125,10 @@ class _ProductRow extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_ProductRow> createState() => _ProductRowState();
+  ConsumerState<_ProductRow> createState() => _ProductRowState();
 }
 
-class _ProductRowState extends State<_ProductRow> {
+class _ProductRowState extends ConsumerState<_ProductRow> {
   bool _hovered = false;
 
   @override
@@ -132,6 +137,11 @@ class _ProductRowState extends State<_ProductRow> {
         .where((i) => i.medicine.id == widget.medicine.id)
         .fold<int>(0, (s, i) => s + i.quantity);
     final inCart = inCartQty > 0;
+    
+    final shopData = ref.watch(currentShopProvider);
+    final bizType = shopData?['businessType'] as String? ?? 'General';
+    final customService = ref.watch(customFieldServiceProvider);
+    final settingsRepo = ref.watch(settingsRepositoryProvider);
 
     Color rowColor = widget.isSelected ? AppTheme.selectedRow : (inCart ? AppTheme.inCartRow : (_hovered ? AppTheme.tableRowHover : Colors.white));
 
@@ -147,15 +157,30 @@ class _ProductRowState extends State<_ProductRow> {
         final displayBatch = activeBatches.isNotEmpty ? activeBatches.first : (batches.isNotEmpty ? batches.first : null);
 
         final hasStock = available > 0;
-        final isLow = hasStock && available < widget.medicine.minStock;
-        final isOut = !hasStock && batches.isNotEmpty;
         final loading = !snapshot.hasData;
+
+        // Settings-driven stock display (read once per row via FutureBuilder)
+        return FutureBuilder<List<String?>>(
+          future: Future.wait([
+            settingsRepo.getSetting('pos_block_oos'),
+            settingsRepo.getSetting('form_show_min_stock'),
+          ]),
+          builder: (context, settingsSnap) {
+            final posBlockOOS = (settingsSnap.data?[0] ?? 'false') == 'true';
+            final showLowStock = (settingsSnap.data?[1] ?? 'true') != 'false';
+            final isLow = shouldShowLowStockBadge(
+              stockLevel: available,
+              minStock: widget.medicine.minStock,
+              stockTrackingEnabled: true,
+              showLowStockBadge: showLowStock,
+            );
+            final isOut = !hasStock && batches.isNotEmpty;
 
         return MouseRegion(
           onEnter: (_) => setState(() => _hovered = true),
           onExit: (_) => setState(() => _hovered = false),
           child: InkWell(
-            onTap: batches.isEmpty && !loading ? null : widget.onTap,
+            onTap: (batches.isEmpty && !loading) || (posBlockOOS && isOut) ? null : widget.onTap,
             child: Container(
               height: 48,
               decoration: BoxDecoration(
@@ -178,6 +203,41 @@ class _ProductRowState extends State<_ProductRow> {
                             children: [
                               Text(widget.medicine.name, maxLines: 1, overflow: TextOverflow.ellipsis, 
                                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: isOut ? AppTheme.textMuted : AppTheme.textPrimary, letterSpacing: -0.2)),
+                              
+                              // FutureBuilder for POS Custom Fields
+                              FutureBuilder<List<CustomFieldValue>>(
+                                future: customService.getValues('product', widget.medicine.id),
+                                builder: (context, valSnap) {
+                                  if (!valSnap.hasData || valSnap.data!.isEmpty) return const SizedBox.shrink();
+                                  return FutureBuilder<List<CustomFieldDefinition>>(
+                                    future: customService.getActiveProductFields(bizType),
+                                    builder: (context, defSnap) {
+                                      if (!defSnap.hasData) return const SizedBox.shrink();
+                                      final posDefs = defSnap.data!.where((d) => d.showInPOS).toList();
+                                      if (posDefs.isEmpty) return const SizedBox.shrink();
+                                      
+                                      List<String> labels = [];
+                                      for (final def in posDefs) {
+                                        final val = valSnap.data!.where((v) => v.definitionId == def.id).firstOrNull;
+                                        if (val != null) {
+                                          final valStr = val.valueText ?? val.valueNumber?.toString() ?? (val.valueBool == true ? 'Yes' : '');
+                                          if (valStr.isNotEmpty && valStr != 'false') labels.add('${def.fieldLabel}: $valStr');
+                                        }
+                                      }
+                                      if (labels.isEmpty) return const SizedBox.shrink();
+                                      return Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Text(
+                                          labels.join(' • '),
+                                          style: const TextStyle(fontSize: 9, color: AppTheme.textSecondary),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      );
+                                    }
+                                  );
+                                }
+                              ),
                               if (inCart) _InCartBadge(qty: inCartQty),
                             ],
                           ),
@@ -203,11 +263,13 @@ class _ProductRowState extends State<_ProductRow> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  _AddButton(inCart: inCart, enabled: !loading, onTap: batches.isEmpty && !loading ? null : widget.onTap),
+                  _AddButton(inCart: inCart, enabled: !loading, onTap: (batches.isEmpty && !loading) || (posBlockOOS && isOut) ? null : widget.onTap),
                 ],
               ),
             ),
           ),
+        );
+        }, // settings FutureBuilder
         );
       },
     );

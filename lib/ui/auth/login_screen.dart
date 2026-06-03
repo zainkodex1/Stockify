@@ -4,6 +4,7 @@ import '../dashboard/dashboard_screen.dart';
 import '../shared/app_theme.dart';
 import '../../data/repositories/shop_repository.dart';
 import '../../data/providers/current_shop_provider.dart';
+import '../../data/services/business_preset_service.dart';
 import 'owner_login_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -44,6 +45,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       // Save to provider
       ref.read(currentShopProvider.notifier).setShop(businessData);
+
+      // Apply and save business preset settings locally
+      final rawBusinessType = businessData['businessType'] as String?;
+      await ref.read(businessPresetServiceProvider).applyPresetFromBusinessType(rawBusinessType);
 
       if (mounted) {
         final businessName = businessData['shopName'] ?? 'Business';

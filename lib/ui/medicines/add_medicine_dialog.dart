@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
+import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../../data/repositories/medicine_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../data/repositories/category_repository.dart';
 import '../../data/database/database.dart';
+import '../../core/config/custom_field_service.dart';
 import '../shared/app_theme.dart';
 
 enum PricingMode { single, pack }
@@ -44,6 +46,12 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   final List<TextEditingController> _unitPriceControllers = [];
   late FocusNode _nameFocusNode;
 
+  // Custom Fields
+  List<CustomFieldDefinition> _customFields = [];
+  final Map<int, TextEditingController> _customFieldControllers = {};
+  final Map<int, bool> _customFieldCheckboxValues = {};
+  final Map<int, String> _customFieldDropdownValues = {};
+
   // Visibility Settings
   bool _showBrand = true;
   bool _showModel = false;
@@ -59,6 +67,21 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   bool _enableExpiry = true;
   bool _enableMultiUnit = false;
   bool _showPurchasePrice = true;
+
+  // Requirement Settings
+  bool _reqName = true;
+  bool _reqBrand = false;
+  bool _reqModel = false;
+  bool _reqGeneric = false;
+  bool _reqStrength = false;
+  bool _reqDosage = false;
+  bool _reqSKU = false;
+  bool _reqBarcode = false;
+  bool _reqCategory = false;
+  bool _reqSubCategory = false;
+  bool _reqBatch = false;
+  bool _reqExpiry = false;
+  bool _reqStock = false;
 
   String? _selectedMainCategory;
   String? _selectedSubCategory;
@@ -116,12 +139,14 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
     for (var c in _unitNameControllers) { c.dispose(); }
     for (var c in _unitFactorControllers) { c.dispose(); }
     for (var c in _unitPriceControllers) { c.dispose(); }
+    for (var c in _customFieldControllers.values) { c.dispose(); }
     super.dispose();
   }
 
   Future<void> _initializeData() async {
     await _loadSettings();
     await _loadCategories();
+    await _loadCustomFields();
     if (widget.medicine == null) {
       await _loadLastCategory();
       await _loadAllMedicines();
@@ -164,6 +189,38 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         _enableExpiry = enableExpiry != 'false';
         _enableMultiUnit = multiUnit == 'true';
         _showPurchasePrice = showBuy != 'false';
+      });
+    }
+
+    final reqName = await repo.getSetting('form_req_name');
+    final reqBrand = await repo.getSetting('form_req_brand');
+    final reqModel = await repo.getSetting('form_req_model');
+    final reqGeneric = await repo.getSetting('form_req_generic');
+    final reqStrength = await repo.getSetting('form_req_strength');
+    final reqDosage = await repo.getSetting('form_req_dosage');
+    final reqSKU = await repo.getSetting('form_req_sku');
+    final reqBarcode = await repo.getSetting('form_req_barcode');
+    final reqCategory = await repo.getSetting('form_req_category');
+    final reqSubCat = await repo.getSetting('form_req_sub_category');
+    final reqBatch = await repo.getSetting('form_req_batch');
+    final reqExpiry = await repo.getSetting('form_req_expiry');
+    final reqStock = await repo.getSetting('form_req_stock');
+
+    if (mounted) {
+      setState(() {
+        _reqName = reqName != 'false';
+        _reqBrand = reqBrand == 'true';
+        _reqModel = reqModel == 'true';
+        _reqGeneric = reqGeneric == 'true';
+        _reqStrength = reqStrength == 'true';
+        _reqDosage = reqDosage == 'true';
+        _reqSKU = reqSKU == 'true';
+        _reqBarcode = reqBarcode == 'true';
+        _reqCategory = reqCategory == 'true';
+        _reqSubCategory = reqSubCat == 'true';
+        _reqBatch = reqBatch == 'true';
+        _reqExpiry = reqExpiry == 'true';
+        _reqStock = reqStock == 'true';
       });
     }
   }
@@ -214,18 +271,83 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
     if (mounted) setState(() => _allMedicines = meds);
   }
 
+  Future<void> _loadCustomFields() async {
+    final repo = ref.read(settingsRepositoryProvider);
+    final bizType = await repo.getSetting('inv_business_type') ?? 'General';
+    final customFields = await ref.read(customFieldServiceProvider).getActiveProductFields(bizType);
+    
+    Map<int, String> existingValues = {};
+    if (widget.medicine != null) {
+      final values = await ref.read(customFieldServiceProvider).getValues('product', widget.medicine!.id);
+      for (final v in values) {
+         existingValues[v.definitionId] = v.valueText ?? v.valueNumber?.toString() ?? (v.valueBool == true ? 'true' : 'false');
+      }
+    }
+
+    if (mounted) {
+       setState(() {
+          _customFields = customFields.where((f) => f.showInProductForm).toList();
+          for (final f in _customFields) {
+             if (f.fieldType == 'checkbox') {
+                _customFieldCheckboxValues[f.id] = existingValues[f.id] == 'true';
+             } else if (f.fieldType == 'dropdown') {
+                _customFieldDropdownValues[f.id] = existingValues[f.id] ?? '';
+             } else {
+                _customFieldControllers[f.id] = TextEditingController(text: existingValues[f.id] ?? '');
+             }
+          }
+       });
+    }
+  }
+
   Future<void> _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
       final repo = ref.read(medicineRepositoryProvider);
       final sRepo = ref.read(settingsRepositoryProvider);
+      final customService = ref.read(customFieldServiceProvider);
+
+      // Validate Custom Fields
+      Map<int, String?> customFormValues = {};
+      for (final f in _customFields) {
+        if (f.fieldType == 'checkbox') customFormValues[f.id] = _customFieldCheckboxValues[f.id]! ? 'true' : 'false';
+        else if (f.fieldType == 'dropdown') customFormValues[f.id] = _customFieldDropdownValues[f.id];
+        else customFormValues[f.id] = _customFieldControllers[f.id]?.text;
+      }
+      
+      final error = customService.validateRequiredFields(_customFields, customFormValues);
+      if (error != null) {
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: AppTheme.redDanger));
+         return;
+      }
+      
+      // Built-in Validation
+      String? builtInError;
+      if (_reqName && _nameController.text.trim().isEmpty) builtInError = 'Product Name is required';
+      else if (_showBrand && _reqBrand && _brandController.text.trim().isEmpty) builtInError = 'Brand is required';
+      else if (_showModel && _reqModel && _modelController.text.trim().isEmpty) builtInError = 'Model is required';
+      else if (_showGenericName && _reqGeneric && _genericNameController.text.trim().isEmpty) builtInError = 'Generic Name is required';
+      else if (_showStrength && _reqStrength && _strengthController.text.trim().isEmpty) builtInError = 'Strength is required';
+      else if (_showDosageForm && _reqDosage && _dosageFormController.text.trim().isEmpty) builtInError = 'Dosage Form is required';
+      else if (_showSKU && _reqSKU && _skuController.text.trim().isEmpty) builtInError = 'SKU is required';
+      else if (_showBarcode && _reqBarcode && _barcodeController.text.trim().isEmpty) builtInError = 'Barcode is required';
+      else if (_showCategory && _reqCategory && _selectedMainCategory == null) builtInError = 'Category is required';
+      else if (_showSubCategory && _reqSubCategory && _selectedSubCategory == null) builtInError = 'Sub-Category is required';
+      else if (_enableBatch && _reqBatch && _batchNoController.text.trim().isEmpty) builtInError = 'Batch Number is required';
+      else if (_reqStock && _qtyController.text.trim().isEmpty) builtInError = 'Opening Stock is required';
+      // _expiryDate is non-null due to DateTime picker. It defaults to +365 days.
+
+      if (builtInError != null) {
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(builtInError), backgroundColor: AppTheme.redDanger));
+         return;
+      }
       
       if (_selectedMainCategory != null) await sRepo.saveSetting('last_main_category', _selectedMainCategory!);
       if (_selectedSubCategory != null) await sRepo.saveSetting('last_sub_category', _selectedSubCategory!);
 
       final mid = await repo.upsertMedicine(MedicinesCompanion(
         id: widget.medicine != null ? drift.Value(widget.medicine!.id) : const drift.Value.absent(),
-        name: drift.Value(_nameController.text),
-        mainCategory: drift.Value(_selectedMainCategory ?? 'General'),
+        name: drift.Value(_nameController.text.trim().isEmpty ? 'Unnamed Product' : _nameController.text.trim()),
+        mainCategory: drift.Value(_selectedMainCategory ?? 'Uncategorized'),
         subCategory: drift.Value(_selectedSubCategory),
         brand: drift.Value(_brandController.text),
         model: drift.Value(_modelController.text),
@@ -234,7 +356,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         dosageForm: drift.Value(_dosageFormController.text),
         minStock: drift.Value(int.tryParse(_minStockController.text) ?? 0),
         code: drift.Value(_barcodeController.text.isNotEmpty ? _barcodeController.text : _skuController.text.isNotEmpty ? _skuController.text : DateTime.now().millisecondsSinceEpoch.toString()),
-        baseUnitName: drift.Value(_baseUnitNameController.text),
+        baseUnitName: drift.Value(_baseUnitNameController.text.isEmpty ? 'Piece' : _baseUnitNameController.text),
       ));
 
       // Handle Units
@@ -264,19 +386,44 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         }
       }
 
-      // Handle Stock
+      // Handle Stock — always create a batch entry when opening stock > 0
       final fQty = int.tryParse(_qtyController.text) ?? 0;
-      if (fQty > 0) {
-        final bNo = _enableBatch ? (_batchNoController.text.isNotEmpty ? _batchNoController.text : 'B-${DateTime.now().millisecondsSinceEpoch}') : 'STOCK-ENTRY';
-        await repo.addBatch(BatchesCompanion(
-          medicineId: drift.Value(mid),
-          batchNumber: drift.Value(bNo),
-          quantity: drift.Value(fQty),
-          purchasePrice: drift.Value(double.tryParse(_unitPurchasePriceController.text) ?? 0.0),
-          salePrice: drift.Value(double.tryParse(_unitSalePriceController.text) ?? 0.0),
-          expiryDate: drift.Value(_enableExpiry ? _expiryDate : DateTime(2099, 12, 31)),
-        ));
+      if (fQty > 0 || widget.medicine == null) {
+        // bNo: use user-entered batch if batch tracking is on, else auto-generate
+        final rawBatch = _batchNoController.text.trim();
+        final bNo = _enableBatch
+            ? (rawBatch.isNotEmpty ? rawBatch : 'B-${DateTime.now().millisecondsSinceEpoch}')
+            : 'STOCK-ENTRY';
+        if (fQty > 0) {
+          await repo.addBatch(BatchesCompanion(
+            medicineId: drift.Value(mid),
+            batchNumber: drift.Value(bNo),
+            quantity: drift.Value(fQty),
+            purchasePrice: drift.Value(double.tryParse(_unitPurchasePriceController.text) ?? 0.0),
+            salePrice: drift.Value(double.tryParse(_unitSalePriceController.text) ?? 0.0),
+            // DateTime(2099) is the sentinel for "no expiry". Use isDummyExpiry() when reading back.
+            expiryDate: drift.Value(_enableExpiry ? _expiryDate : DateTime(2099, 12, 31)),
+          ));
+        }
       }
+
+      // Save custom fields
+      Map<int, CustomFieldValuesCompanion> cv = {};
+      for (final f in _customFields) {
+         final val = customFormValues[f.id];
+         if (val != null && val.isNotEmpty) {
+            cv[f.id] = CustomFieldValuesCompanion.insert(
+               definitionId: f.id,
+               securityKey: '', // Filled by service
+               entityType: 'product',
+               entityId: mid,
+               valueText: drift.Value(f.fieldType == 'text' || f.fieldType == 'textarea' || f.fieldType == 'dropdown' ? val : null),
+               valueNumber: drift.Value(f.fieldType == 'number' || f.fieldType == 'decimal' ? double.tryParse(val) : null),
+               valueBool: drift.Value(f.fieldType == 'checkbox' ? val == 'true' : null),
+            );
+         }
+      }
+      await customService.saveProductValues(mid, cv);
 
       if (context.mounted) Navigator.pop(context);
     }
@@ -312,6 +459,10 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                       if (_enableMultiUnit) ...[
                         const SizedBox(height: 32),
                         _buildMultiUnitSection(),
+                      ],
+                      if (_customFields.isNotEmpty) ...[
+                        const SizedBox(height: 32),
+                        _buildCustomFieldsSection(),
                       ],
                     ],
                   ),
@@ -540,7 +691,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         fieldViewBuilder: (ctx, ctrl, focus, onSub) => TextFormField(
           controller: ctrl, focusNode: focus,
           decoration: const InputDecoration(labelText: 'Product Name', prefixIcon: Icon(Icons.search_rounded)),
-          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+          validator: (v) => null,
         ),
         optionsViewBuilder: (ctx, onSel, options) => Align(
           alignment: Alignment.topLeft,
@@ -585,6 +736,62 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         decoration: const InputDecoration(labelText: 'Expiry Date', prefixIcon: Icon(Icons.event_rounded, size: 20), fillColor: Colors.white, filled: true),
         child: Text(DateFormat('MMM dd, yyyy').format(_expiryDate), style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
+    );
+  }
+
+  Widget _buildCustomFieldsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Additional Business Attributes'),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: _customFields.map((f) {
+            const w = 400.0;
+            if (f.fieldType == 'checkbox') {
+              return SizedBox(
+                width: w,
+                child: CheckboxListTile(
+                  title: Text('${f.fieldLabel}${f.isRequired ? ' *' : ''}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                  value: _customFieldCheckboxValues[f.id] ?? false,
+                  onChanged: (v) => setState(() => _customFieldCheckboxValues[f.id] = v!),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              );
+            } else if (f.fieldType == 'dropdown') {
+              List<String> options = [];
+              if (f.optionsJson != null) {
+                try {
+                  final List<dynamic> decoded = jsonDecode(f.optionsJson!);
+                  options = decoded.map((e) => e.toString()).toList();
+                } catch (_) {}
+              }
+              return SizedBox(
+                width: w,
+                child: _buildDropdown(
+                  '${f.fieldLabel}${f.isRequired ? ' *' : ''}',
+                  _customFieldDropdownValues[f.id]?.isEmpty == true ? null : _customFieldDropdownValues[f.id],
+                  options,
+                  (v) => setState(() => _customFieldDropdownValues[f.id] = v ?? ''),
+                ),
+              );
+            } else {
+              return SizedBox(
+                width: w,
+                child: _buildTextField(
+                  _customFieldControllers[f.id]!,
+                  '${f.fieldLabel}${f.isRequired ? ' *' : ''}',
+                  Icons.text_fields_rounded,
+                  isNumeric: f.fieldType == 'number' || f.fieldType == 'decimal',
+                ),
+              );
+            }
+          }).toList(),
+        ),
+      ],
     );
   }
 }

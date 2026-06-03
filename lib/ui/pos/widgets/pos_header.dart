@@ -5,8 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/database/database.dart';
 import '../../../ui/shared/app_theme.dart';
 import '../../../data/providers/current_shop_provider.dart';
+import '../../../data/repositories/settings_repository.dart';
 
-/// POS top action bar + single compact control bar for customer and product search.
+// ─── Public Widget ─────────────────────────────────────────────────────────────
+
+/// POS top area: slim gradient info bar + two visually-separated cards
+/// (Customer  |  Product Search). Same external API as previous version.
 class PosHeader extends ConsumerWidget {
   const PosHeader({
     super.key,
@@ -46,19 +50,19 @@ class PosHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final businessData = ref.watch(currentShopProvider);
-    final userName = businessData?['ownerName'] ?? 'Ali Khan'; // Restore previous name as default
     final shopName = businessData?['shopName'] ?? 'Stockify';
+    final userName = businessData?['ownerName'] ?? 'Cashier';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _SlimGradientHeader(
-          isMobile: isMobile, 
-          onNewSale: onNewSale, 
-          userName: userName,
+        _SlimInfoBar(
+          isMobile: isMobile,
           shopName: shopName,
+          userName: userName,
+          onNewSale: onNewSale,
         ),
-        _ControlBox(
+        _ControlStrip(
           isMobile: isMobile,
           customerController: customerNameController,
           customerFocus: customerNameFocus,
@@ -77,18 +81,20 @@ class PosHeader extends ConsumerWidget {
   }
 }
 
-class _SlimGradientHeader extends StatelessWidget {
-  const _SlimGradientHeader({
-    required this.isMobile, 
-    required this.onNewSale,
-    required this.userName,
+// ─── Slim Gradient Info Bar ───────────────────────────────────────────────────
+
+class _SlimInfoBar extends StatelessWidget {
+  const _SlimInfoBar({
+    required this.isMobile,
     required this.shopName,
+    required this.userName,
+    required this.onNewSale,
   });
-  
+
   final bool isMobile;
-  final VoidCallback onNewSale;
-  final String userName;
   final String shopName;
+  final String userName;
+  final VoidCallback onNewSale;
 
   @override
   Widget build(BuildContext context) {
@@ -100,50 +106,82 @@ class _SlimGradientHeader extends StatelessWidget {
         child: Row(
           children: [
             if (!isMobile) ...[
-              _infoItem(Icons.business_rounded, shopName),
-              _divider(),
-              _infoItem(Icons.person_outline_rounded, userName),
-              _divider(),
-              _infoItem(Icons.calendar_today_rounded, DateFormat('dd MMM yyyy').format(DateTime.now())),
-            ] else 
-              const Icon(Icons.point_of_sale_rounded, color: AppTheme.tealAccent, size: 18),
-            
+              _InfoChip(icon: Icons.storefront_rounded, label: shopName),
+              _InfoDivider(),
+              _InfoChip(icon: Icons.person_outline_rounded, label: userName),
+              _InfoDivider(),
+              _InfoChip(
+                icon: Icons.calendar_today_rounded,
+                label: DateFormat('EEE, dd MMM yyyy').format(DateTime.now()),
+              ),
+            ] else
+              const Icon(Icons.point_of_sale_rounded,
+                  color: AppTheme.tealAccent, size: 18),
             const Spacer(),
-            
-            _ActionChip(icon: Icons.add_circle_outline_rounded, label: isMobile ? '' : 'New (Ctrl+N)', onTap: onNewSale),
-            const SizedBox(width: 4),
-            _ActionChip(icon: Icons.pause_circle_outline_rounded, label: isMobile ? '' : 'Hold', onTap: () {}),
-            const SizedBox(width: 4),
-            _ActionChip(icon: Icons.play_circle_outline_rounded, label: isMobile ? '' : 'Resume', onTap: () {}),
+            _HeaderAction(
+              icon: Icons.add_circle_outline_rounded,
+              label: isMobile ? '' : 'New  Ctrl+N',
+              onTap: onNewSale,
+            ),
+            const SizedBox(width: 6),
+            _HeaderAction(
+              icon: Icons.pause_circle_outline_rounded,
+              label: isMobile ? '' : 'Hold',
+              onTap: () {},
+            ),
+            const SizedBox(width: 6),
+            _HeaderAction(
+              icon: Icons.play_circle_outline_rounded,
+              label: isMobile ? '' : 'Resume',
+              onTap: () {},
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _infoItem(IconData icon, String value) {
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.7)),
+        Icon(icon, size: 13, color: Colors.white.withValues(alpha: 0.6)),
         const SizedBox(width: 6),
-        Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.white)),
       ],
-    );
-  }
-
-  Widget _divider() {
-    return Container(
-      height: 12,
-      width: 1,
-      color: Colors.white.withValues(alpha: 0.15),
-      margin: const EdgeInsets.symmetric(horizontal: 12),
     );
   }
 }
 
-class _ActionChip extends StatelessWidget {
-  const _ActionChip({required this.icon, required this.label, required this.onTap});
+class _InfoDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 3,
+      height: 3,
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.25),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+class _HeaderAction extends StatelessWidget {
+  const _HeaderAction(
+      {required this.icon, required this.label, required this.onTap});
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -156,19 +194,25 @@ class _ActionChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppTheme.r6),
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: label.isEmpty ? 8 : 10, vertical: 4),
+          padding: EdgeInsets.symmetric(
+              horizontal: label.isEmpty ? 8 : 10, vertical: 5),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(AppTheme.r6),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.12)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, color: Colors.white, size: 14),
               if (label.isNotEmpty) ...[
-                const SizedBox(width: 6),
-                Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                const SizedBox(width: 5),
+                Text(label,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600)),
               ],
             ],
           ),
@@ -178,8 +222,10 @@ class _ActionChip extends StatelessWidget {
   }
 }
 
-class _ControlBox extends StatefulWidget {
-  const _ControlBox({
+// ─── Control Strip ────────────────────────────────────────────────────────────
+
+class _ControlStrip extends ConsumerStatefulWidget {
+  const _ControlStrip({
     required this.isMobile,
     required this.customerController,
     required this.customerFocus,
@@ -208,52 +254,42 @@ class _ControlBox extends StatefulWidget {
   final VoidCallback? onClearCustomer;
 
   @override
-  State<_ControlBox> createState() => _ControlBoxState();
+  ConsumerState<_ControlStrip> createState() => _ControlStripState();
 }
 
-class _ControlBoxState extends State<_ControlBox> {
-  final LayerLink _layerLink = LayerLink();
-  final FocusNode _keyboardFocusNode = FocusNode();
-  int _highlightedIndex = -1;
+class _ControlStripState extends ConsumerState<_ControlStrip> {
+  @override
+  void initState() {
+    super.initState();
+    widget.customerFocus.addListener(_onFocusChange);
+    widget.customerController.addListener(_onCustomerChange);
+  }
 
   @override
   void dispose() {
-    _keyboardFocusNode.dispose();
+    widget.customerFocus.removeListener(_onFocusChange);
+    widget.customerController.removeListener(_onCustomerChange);
     super.dispose();
   }
 
-  @override
-  void didUpdateWidget(covariant _ControlBox oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.customerResults.isEmpty) {
-      _highlightedIndex = -1;
-    } else if (_highlightedIndex >= widget.customerResults.length) {
-      _highlightedIndex = widget.customerResults.length - 1;
-    }
+  void _onFocusChange() {
+    if (mounted) setState(() {});
+  }
+  
+  void _onCustomerChange() {
+    if (mounted) setState(() {});
   }
 
-  void _handleKey(RawKeyEvent event) {
-    if (event is! RawKeyDownEvent) return;
-    
-    if (widget.customerResults.isNotEmpty && widget.customerFocus.hasFocus) {
-      if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-        setState(() => _highlightedIndex = (_highlightedIndex + 1) % widget.customerResults.length);
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-        setState(() => _highlightedIndex = (_highlightedIndex - 1 + widget.customerResults.length) % widget.customerResults.length);
-      } else if (event.logicalKey == LogicalKeyboardKey.enter) {
-        if (_highlightedIndex != -1) {
-          widget.onSelectCustomer(widget.customerResults[_highlightedIndex]);
-          setState(() => _highlightedIndex = -1);
-        } else if (widget.customerController.text.trim().isNotEmpty) {
-           widget.onNewCustomer(widget.customerController.text.trim());
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-        widget.onSearchCustomer('');
-      }
-    } else if (widget.customerFocus.hasFocus && widget.customerResults.isEmpty && event.logicalKey == LogicalKeyboardKey.enter) {
-        if (widget.customerController.text.trim().isNotEmpty && widget.customerController.text != 'Walk-in Customer') {
-          widget.onNewCustomer(widget.customerController.text.trim());
-        }
+  static String _searchHint(String bizType) {
+    switch (bizType) {
+      case 'Pharmacy':
+        return 'Search medicine / generic name / barcode  (F3)...';
+      case 'Electronics':
+        return 'Search product / model / serial no / SKU  (F3)...';
+      case 'Grocery':
+        return 'Search product / barcode / SKU  (F3)...';
+      default:
+        return 'Search product / barcode / SKU  (F3)...';
     }
   }
 
@@ -262,221 +298,257 @@ class _ControlBoxState extends State<_ControlBox> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface, // Moved inside decoration to fix crash
         border: Border(bottom: BorderSide(color: AppTheme.border)),
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppTheme.r8),
-              border: Border.all(color: AppTheme.border, width: 1.5),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2)),
+      child: FutureBuilder<String?>(
+        future: ref
+            .read(settingsRepositoryProvider)
+            .getSetting('inv_business_type'),
+        builder: (context, snap) {
+          final hint = _searchHint(snap.data ?? 'General');
+
+          if (widget.isMobile) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCustomerCard(),
+                const SizedBox(height: 8),
+                _buildProductCard(hint),
               ],
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: widget.isMobile 
-              ? Column(
-                  children: [
-                    CompositedTransformTarget(
-                      link: _layerLink,
-                      child: RawKeyboardListener(
-                        focusNode: _keyboardFocusNode,
-                        onKey: _handleKey,
-                        child: _MiniField(
-                          icon: Icons.person_search_rounded,
-                          controller: widget.customerController,
-                          focusNode: widget.customerFocus,
-                          hint: 'Select Customer (F2)...',
-                          onChanged: (v) => v.length > 1 ? widget.onSearchCustomer(v) : null,
-                          suffix: widget.customerController.text != 'Walk-in Customer' && widget.customerController.text.isNotEmpty
-                            ? IconButton(
-                                onPressed: widget.onClearCustomer,
-                                icon: const Icon(Icons.close_rounded, size: 12),
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              )
-                            : const Icon(Icons.arrow_drop_down_rounded, color: AppTheme.textMuted, size: 16),
-                        ),
-                      ),
-                    ),
-                    const Divider(height: 1, thickness: 1, color: AppTheme.border),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _MiniField(
-                            icon: Icons.search_rounded,
-                            controller: widget.productController,
-                            focusNode: widget.productFocus,
-                            hint: 'Search products (F3)...',
-                            onChanged: widget.onProductSearchChanged,
-                          ),
-                        ),
-                        _SmallAddBtn(onTap: () => widget.onNewCustomer()),
-                      ],
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: CompositedTransformTarget(
-                        link: _layerLink,
-                        child: RawKeyboardListener(
-                          focusNode: _keyboardFocusNode,
-                          onKey: _handleKey,
-                          child: _MiniField(
-                            icon: Icons.person_search_rounded,
-                            controller: widget.customerController,
-                            focusNode: widget.customerFocus,
-                            hint: 'Select Customer (F2)...',
-                            onChanged: (v) => v.length > 1 ? widget.onSearchCustomer(v) : null,
-                            suffix: widget.customerController.text != 'Walk-in Customer' && widget.customerController.text.isNotEmpty
-                              ? IconButton(
-                                  onPressed: widget.onClearCustomer,
-                                  icon: const Icon(Icons.close_rounded, size: 12),
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                )
-                              : const Icon(Icons.arrow_drop_down_rounded, color: AppTheme.textMuted, size: 16),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Container(width: 1.5, height: 24, color: AppTheme.border, margin: const EdgeInsets.symmetric(horizontal: 8)),
-                    Expanded(
-                      flex: 5,
-                      child: _MiniField(
-                        icon: Icons.search_rounded,
-                        controller: widget.productController,
-                        focusNode: widget.productFocus,
-                        hint: 'Search products / SKU / barcode (F3)...',
-                        onChanged: widget.onProductSearchChanged,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    _SmallAddBtn(onTap: () => widget.onNewCustomer()),
-                  ],
-                ),
-          ),
-          
-          if (widget.customerFocus.hasFocus && (widget.customerResults.isNotEmpty || (widget.customerController.text.length > 1 && widget.customerController.text != 'Walk-in Customer')))
-            Positioned(
-              top: 42,
-              left: 0,
-              child: CompositedTransformFollower(
-                link: _layerLink,
-                showWhenUnlinked: false,
-                offset: const Offset(0, 0),
-                child: Material(
-                  elevation: 12,
-                  borderRadius: BorderRadius.circular(AppTheme.r12),
-                  color: Colors.white,
-                  child: Container(
-                    width: 320,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppTheme.r12),
-                      border: Border.all(color: AppTheme.border),
-                    ),
-                    child: widget.customerResults.isNotEmpty 
-                      ? _SuggestionList(
-                          results: widget.customerResults, 
-                          onSelect: widget.onSelectCustomer,
-                          highlightedIndex: _highlightedIndex,
-                        )
-                      : _NoResultBox(typedName: widget.customerController.text, onAdd: widget.onNewCustomer),
-                  ),
-                ),
-              ),
-            ),
-        ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Customer card — fixed compact width
+              SizedBox(width: 270, child: _buildCustomerCard()),
+              const SizedBox(width: 12),
+              // Product search — expands to fill all remaining width
+              Expanded(child: _buildProductCard(hint)),
+            ],
+          );
+        },
       ),
     );
   }
-}
 
-class _MiniField extends StatelessWidget {
-  const _MiniField({
-    required this.icon,
-    required this.controller,
-    this.focusNode,
-    required this.hint,
-    this.onChanged,
-    this.suffix,
-  });
+  // ── Customer Card ───────────────────────────────────────────────────────────
 
-  final IconData icon;
-  final TextEditingController controller;
-  final FocusNode? focusNode;
-  final String hint;
-  final ValueChanged<String>? onChanged;
-  final Widget? suffix;
+  Widget _buildCustomerCard() {
+    final name = widget.customerController.text;
+    final isNamed = name.isNotEmpty && name != 'Walk-in Customer';
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+    return Focus(
+      focusNode: widget.customerFocus,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
+          widget.onNewCustomer();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: () => widget.onNewCustomer(),
+        child: _PosCard(
+          highlighted: widget.customerFocus.hasFocus,
+          child: Row(
+            children: [
+              // Avatar icon
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: isNamed ? AppTheme.infoSurface : AppTheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(AppTheme.r8),
+                ),
+                child: Icon(
+                  isNamed ? Icons.person_rounded : Icons.person_outline_rounded,
+                  size: 17,
+                  color: isNamed ? AppTheme.royalBlue : AppTheme.textMuted,
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Label + customer name
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'CUSTOMER  ·  F2',
+                      style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.textMuted,
+                          letterSpacing: 0.5),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isNamed ? name : 'Walk-in Customer',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isNamed ? FontWeight.w700 : FontWeight.w400,
+                          color: isNamed ? AppTheme.textPrimary : AppTheme.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              // Action — clear or search icon
+              if (isNamed)
+                _IconMicro(
+                    icon: Icons.close_rounded,
+                    tooltip: 'Reset to Walk-in',
+                    onTap: () {
+                      widget.customerFocus.unfocus();
+                      widget.onClearCustomer?.call();
+                    })
+              else
+                const Icon(Icons.search_rounded, size: 15, color: AppTheme.textMuted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Product Search Card ─────────────────────────────────────────────────────
+
+  Widget _buildProductCard(String hint) {
+    final hasText = widget.productController.text.isNotEmpty;
+
+    return _PosCard(
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppTheme.royalBlue.withValues(alpha: 0.6)),
+          Icon(
+            Icons.search_rounded,
+            size: 18,
+            color: widget.productFocus.hasFocus
+                ? AppTheme.royalBlue
+                : AppTheme.textMuted,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
-              controller: controller,
-              focusNode: focusNode,
-              onChanged: onChanged,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+              controller: widget.productController,
+              focusNode: widget.productFocus,
+              onChanged: widget.onProductSearchChanged,
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 13, fontWeight: FontWeight.w400),
+                hintStyle: const TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
+                filled: false,
               ),
             ),
           ),
-          if (suffix != null) suffix!,
+          if (hasText)
+            _IconMicro(
+                icon: Icons.close_rounded,
+                tooltip: 'Clear  Esc',
+                onTap: widget.onClearProduct),
+          const SizedBox(width: 6),
+          // Add customer button
+          Tooltip(
+            message: 'New Customer',
+            child: Material(
+              color: AppTheme.royalBlue,
+              borderRadius: BorderRadius.circular(AppTheme.r8),
+              child: InkWell(
+                onTap: () => widget.onNewCustomer(),
+                borderRadius: BorderRadius.circular(AppTheme.r8),
+                child: const SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: Icon(Icons.person_add_alt_1_rounded,
+                      color: Colors.white, size: 16),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _SmallAddBtn extends StatelessWidget {
-  const _SmallAddBtn({required this.onTap});
-  final VoidCallback onTap;
+// ─── Shared card container ────────────────────────────────────────────────────
+
+class _PosCard extends StatelessWidget {
+  const _PosCard({required this.child, this.highlighted = false});
+  final Widget child;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 120),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.r12),
+        border: Border.all(
+          color: highlighted ? AppTheme.royalBlue : AppTheme.border,
+          width: highlighted ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryNavy.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+// ─── Micro icon button ────────────────────────────────────────────────────────
+
+class _IconMicro extends StatelessWidget {
+  const _IconMicro({required this.icon, this.onTap, this.tooltip});
+  final IconData icon;
+  final VoidCallback? onTap;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'New Customer (Ctrl+N)',
-      child: Material(
-        color: AppTheme.royalBlue,
+      message: tooltip ?? '',
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(AppTheme.r6),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppTheme.r6),
-          child: Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(icon, size: 14, color: AppTheme.textMuted),
         ),
       ),
     );
   }
 }
 
+// ─── Customer suggestion list ─────────────────────────────────────────────────
+
 class _SuggestionList extends StatelessWidget {
-  const _SuggestionList({required this.results, required this.onSelect, required this.highlightedIndex});
+  const _SuggestionList({
+    required this.results,
+    required this.onSelect,
+    required this.highlightedIndex,
+  });
   final List<Customer> results;
   final ValueChanged<Customer> onSelect;
   final int highlightedIndex;
@@ -489,21 +561,34 @@ class _SuggestionList extends StatelessWidget {
         shrinkWrap: true,
         padding: EdgeInsets.zero,
         itemCount: results.length,
-        separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5, color: AppTheme.border),
+        separatorBuilder: (_, __) =>
+            const Divider(height: 1, thickness: 0.5, color: AppTheme.border),
         itemBuilder: (context, i) {
           final c = results[i];
-          final isHighlighted = i == highlightedIndex;
+          final isHl = i == highlightedIndex;
           return ListTile(
             dense: true,
             visualDensity: VisualDensity.compact,
-            tileColor: isHighlighted ? AppTheme.selectedRow : null,
+            tileColor: isHl ? AppTheme.selectedRow : null,
             leading: CircleAvatar(
-              radius: 11,
-              backgroundColor: isHighlighted ? AppTheme.royalBlue : AppTheme.infoSurface,
-              child: Text(c.name[0].toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: isHighlighted ? Colors.white : AppTheme.royalBlue)),
+              radius: 12,
+              backgroundColor:
+                  isHl ? AppTheme.royalBlue : AppTheme.infoSurface,
+              child: Text(c.name[0].toUpperCase(),
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isHl ? Colors.white : AppTheme.royalBlue)),
             ),
-            title: Text(c.name, style: TextStyle(fontSize: 11, fontWeight: isHighlighted ? FontWeight.w800 : FontWeight.w600)),
-            subtitle: c.phoneNumber != null ? Text(c.phoneNumber!, style: const TextStyle(fontSize: 9)) : null,
+            title: Text(c.name,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight:
+                        isHl ? FontWeight.w800 : FontWeight.w600)),
+            subtitle: c.phoneNumber != null
+                ? Text(c.phoneNumber!,
+                    style: const TextStyle(fontSize: 10))
+                : null,
             onTap: () => onSelect(c),
           );
         },
@@ -511,6 +596,8 @@ class _SuggestionList extends StatelessWidget {
     );
   }
 }
+
+// ─── No result / add new customer ────────────────────────────────────────────
 
 class _NoResultBox extends StatelessWidget {
   const _NoResultBox({required this.typedName, required this.onAdd});
@@ -520,20 +607,27 @@ class _NoResultBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('No customer found', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-          const SizedBox(height: 6),
-          const Text('Press Enter to add as new customer', style: TextStyle(fontSize: 10, color: AppTheme.textPrimary, fontWeight: FontWeight.bold)),
+          const Text('No customer found',
+              style: TextStyle(
+                  fontSize: 11, color: AppTheme.textMuted)),
+          const SizedBox(height: 4),
+          const Text('Press Enter to add as new customer',
+              style: TextStyle(
+                  fontSize: 10,
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () => onAdd(typedName),
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 14),
-              label: Text('Add "$typedName"', style: const TextStyle(fontSize: 11)),
+              label: Text('Add "$typedName"',
+                  style: const TextStyle(fontSize: 11)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.tealAccent,
                 foregroundColor: Colors.white,

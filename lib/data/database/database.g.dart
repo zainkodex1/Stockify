@@ -3824,6 +3824,17 @@ class $SaleItemsTable extends SaleItems
     requiredDuringInsert: false,
     defaultValue: const Constant(1.0),
   );
+  static const VerificationMeta _customFieldsJsonMeta = const VerificationMeta(
+    'customFieldsJson',
+  );
+  @override
+  late final GeneratedColumn<String> customFieldsJson = GeneratedColumn<String>(
+    'custom_fields_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3834,6 +3845,7 @@ class $SaleItemsTable extends SaleItems
     total,
     unitName,
     conversionFactor,
+    customFieldsJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3905,6 +3917,15 @@ class $SaleItemsTable extends SaleItems
         ),
       );
     }
+    if (data.containsKey('custom_fields_json')) {
+      context.handle(
+        _customFieldsJsonMeta,
+        customFieldsJson.isAcceptableOrUnknown(
+          data['custom_fields_json']!,
+          _customFieldsJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3946,6 +3967,10 @@ class $SaleItemsTable extends SaleItems
         DriftSqlType.double,
         data['${effectivePrefix}conversion_factor'],
       )!,
+      customFieldsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}custom_fields_json'],
+      ),
     );
   }
 
@@ -3964,6 +3989,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
   final double total;
   final String? unitName;
   final double conversionFactor;
+  final String? customFieldsJson;
   const SaleItem({
     required this.id,
     required this.saleId,
@@ -3973,6 +3999,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     required this.total,
     this.unitName,
     required this.conversionFactor,
+    this.customFieldsJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3987,6 +4014,9 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       map['unit_name'] = Variable<String>(unitName);
     }
     map['conversion_factor'] = Variable<double>(conversionFactor);
+    if (!nullToAbsent || customFieldsJson != null) {
+      map['custom_fields_json'] = Variable<String>(customFieldsJson);
+    }
     return map;
   }
 
@@ -4002,6 +4032,9 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           ? const Value.absent()
           : Value(unitName),
       conversionFactor: Value(conversionFactor),
+      customFieldsJson: customFieldsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customFieldsJson),
     );
   }
 
@@ -4019,6 +4052,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       total: serializer.fromJson<double>(json['total']),
       unitName: serializer.fromJson<String?>(json['unitName']),
       conversionFactor: serializer.fromJson<double>(json['conversionFactor']),
+      customFieldsJson: serializer.fromJson<String?>(json['customFieldsJson']),
     );
   }
   @override
@@ -4033,6 +4067,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       'total': serializer.toJson<double>(total),
       'unitName': serializer.toJson<String?>(unitName),
       'conversionFactor': serializer.toJson<double>(conversionFactor),
+      'customFieldsJson': serializer.toJson<String?>(customFieldsJson),
     };
   }
 
@@ -4045,6 +4080,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     double? total,
     Value<String?> unitName = const Value.absent(),
     double? conversionFactor,
+    Value<String?> customFieldsJson = const Value.absent(),
   }) => SaleItem(
     id: id ?? this.id,
     saleId: saleId ?? this.saleId,
@@ -4054,6 +4090,9 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     total: total ?? this.total,
     unitName: unitName.present ? unitName.value : this.unitName,
     conversionFactor: conversionFactor ?? this.conversionFactor,
+    customFieldsJson: customFieldsJson.present
+        ? customFieldsJson.value
+        : this.customFieldsJson,
   );
   SaleItem copyWithCompanion(SaleItemsCompanion data) {
     return SaleItem(
@@ -4067,6 +4106,9 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       conversionFactor: data.conversionFactor.present
           ? data.conversionFactor.value
           : this.conversionFactor,
+      customFieldsJson: data.customFieldsJson.present
+          ? data.customFieldsJson.value
+          : this.customFieldsJson,
     );
   }
 
@@ -4080,7 +4122,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           ..write('price: $price, ')
           ..write('total: $total, ')
           ..write('unitName: $unitName, ')
-          ..write('conversionFactor: $conversionFactor')
+          ..write('conversionFactor: $conversionFactor, ')
+          ..write('customFieldsJson: $customFieldsJson')
           ..write(')'))
         .toString();
   }
@@ -4095,6 +4138,7 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     total,
     unitName,
     conversionFactor,
+    customFieldsJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -4107,7 +4151,8 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           other.price == this.price &&
           other.total == this.total &&
           other.unitName == this.unitName &&
-          other.conversionFactor == this.conversionFactor);
+          other.conversionFactor == this.conversionFactor &&
+          other.customFieldsJson == this.customFieldsJson);
 }
 
 class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
@@ -4119,6 +4164,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
   final Value<double> total;
   final Value<String?> unitName;
   final Value<double> conversionFactor;
+  final Value<String?> customFieldsJson;
   const SaleItemsCompanion({
     this.id = const Value.absent(),
     this.saleId = const Value.absent(),
@@ -4128,6 +4174,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     this.total = const Value.absent(),
     this.unitName = const Value.absent(),
     this.conversionFactor = const Value.absent(),
+    this.customFieldsJson = const Value.absent(),
   });
   SaleItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -4138,6 +4185,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     required double total,
     this.unitName = const Value.absent(),
     this.conversionFactor = const Value.absent(),
+    this.customFieldsJson = const Value.absent(),
   }) : saleId = Value(saleId),
        batchId = Value(batchId),
        quantity = Value(quantity),
@@ -4152,6 +4200,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     Expression<double>? total,
     Expression<String>? unitName,
     Expression<double>? conversionFactor,
+    Expression<String>? customFieldsJson,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4162,6 +4211,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       if (total != null) 'total': total,
       if (unitName != null) 'unit_name': unitName,
       if (conversionFactor != null) 'conversion_factor': conversionFactor,
+      if (customFieldsJson != null) 'custom_fields_json': customFieldsJson,
     });
   }
 
@@ -4174,6 +4224,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     Value<double>? total,
     Value<String?>? unitName,
     Value<double>? conversionFactor,
+    Value<String?>? customFieldsJson,
   }) {
     return SaleItemsCompanion(
       id: id ?? this.id,
@@ -4184,6 +4235,7 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       total: total ?? this.total,
       unitName: unitName ?? this.unitName,
       conversionFactor: conversionFactor ?? this.conversionFactor,
+      customFieldsJson: customFieldsJson ?? this.customFieldsJson,
     );
   }
 
@@ -4214,6 +4266,9 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     if (conversionFactor.present) {
       map['conversion_factor'] = Variable<double>(conversionFactor.value);
     }
+    if (customFieldsJson.present) {
+      map['custom_fields_json'] = Variable<String>(customFieldsJson.value);
+    }
     return map;
   }
 
@@ -4227,7 +4282,1816 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
           ..write('price: $price, ')
           ..write('total: $total, ')
           ..write('unitName: $unitName, ')
-          ..write('conversionFactor: $conversionFactor')
+          ..write('conversionFactor: $conversionFactor, ')
+          ..write('customFieldsJson: $customFieldsJson')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CustomFieldDefinitionsTable extends CustomFieldDefinitions
+    with TableInfo<$CustomFieldDefinitionsTable, CustomFieldDefinition> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomFieldDefinitionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _securityKeyMeta = const VerificationMeta(
+    'securityKey',
+  );
+  @override
+  late final GeneratedColumn<String> securityKey = GeneratedColumn<String>(
+    'security_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _businessTypeMeta = const VerificationMeta(
+    'businessType',
+  );
+  @override
+  late final GeneratedColumn<String> businessType = GeneratedColumn<String>(
+    'business_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _entityTypeMeta = const VerificationMeta(
+    'entityType',
+  );
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+    'entity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fieldKeyMeta = const VerificationMeta(
+    'fieldKey',
+  );
+  @override
+  late final GeneratedColumn<String> fieldKey = GeneratedColumn<String>(
+    'field_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fieldLabelMeta = const VerificationMeta(
+    'fieldLabel',
+  );
+  @override
+  late final GeneratedColumn<String> fieldLabel = GeneratedColumn<String>(
+    'field_label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fieldTypeMeta = const VerificationMeta(
+    'fieldType',
+  );
+  @override
+  late final GeneratedColumn<String> fieldType = GeneratedColumn<String>(
+    'field_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _optionsJsonMeta = const VerificationMeta(
+    'optionsJson',
+  );
+  @override
+  late final GeneratedColumn<String> optionsJson = GeneratedColumn<String>(
+    'options_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _defaultValueMeta = const VerificationMeta(
+    'defaultValue',
+  );
+  @override
+  late final GeneratedColumn<String> defaultValue = GeneratedColumn<String>(
+    'default_value',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isRequiredMeta = const VerificationMeta(
+    'isRequired',
+  );
+  @override
+  late final GeneratedColumn<bool> isRequired = GeneratedColumn<bool>(
+    'is_required',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_required" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _showInProductFormMeta = const VerificationMeta(
+    'showInProductForm',
+  );
+  @override
+  late final GeneratedColumn<bool> showInProductForm = GeneratedColumn<bool>(
+    'show_in_product_form',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("show_in_product_form" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _showInPOSMeta = const VerificationMeta(
+    'showInPOS',
+  );
+  @override
+  late final GeneratedColumn<bool> showInPOS = GeneratedColumn<bool>(
+    'show_in_p_o_s',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("show_in_p_o_s" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _showInCartMeta = const VerificationMeta(
+    'showInCart',
+  );
+  @override
+  late final GeneratedColumn<bool> showInCart = GeneratedColumn<bool>(
+    'show_in_cart',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("show_in_cart" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _showInInvoiceMeta = const VerificationMeta(
+    'showInInvoice',
+  );
+  @override
+  late final GeneratedColumn<bool> showInInvoice = GeneratedColumn<bool>(
+    'show_in_invoice',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("show_in_invoice" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _showInSearchMeta = const VerificationMeta(
+    'showInSearch',
+  );
+  @override
+  late final GeneratedColumn<bool> showInSearch = GeneratedColumn<bool>(
+    'show_in_search',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("show_in_search" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _showInReportsMeta = const VerificationMeta(
+    'showInReports',
+  );
+  @override
+  late final GeneratedColumn<bool> showInReports = GeneratedColumn<bool>(
+    'show_in_reports',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("show_in_reports" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    securityKey,
+    businessType,
+    entityType,
+    fieldKey,
+    fieldLabel,
+    fieldType,
+    optionsJson,
+    defaultValue,
+    isRequired,
+    isActive,
+    showInProductForm,
+    showInPOS,
+    showInCart,
+    showInInvoice,
+    showInSearch,
+    showInReports,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'custom_field_definitions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CustomFieldDefinition> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('security_key')) {
+      context.handle(
+        _securityKeyMeta,
+        securityKey.isAcceptableOrUnknown(
+          data['security_key']!,
+          _securityKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_securityKeyMeta);
+    }
+    if (data.containsKey('business_type')) {
+      context.handle(
+        _businessTypeMeta,
+        businessType.isAcceptableOrUnknown(
+          data['business_type']!,
+          _businessTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+        _entityTypeMeta,
+        entityType.isAcceptableOrUnknown(data['entity_type']!, _entityTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('field_key')) {
+      context.handle(
+        _fieldKeyMeta,
+        fieldKey.isAcceptableOrUnknown(data['field_key']!, _fieldKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fieldKeyMeta);
+    }
+    if (data.containsKey('field_label')) {
+      context.handle(
+        _fieldLabelMeta,
+        fieldLabel.isAcceptableOrUnknown(data['field_label']!, _fieldLabelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fieldLabelMeta);
+    }
+    if (data.containsKey('field_type')) {
+      context.handle(
+        _fieldTypeMeta,
+        fieldType.isAcceptableOrUnknown(data['field_type']!, _fieldTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fieldTypeMeta);
+    }
+    if (data.containsKey('options_json')) {
+      context.handle(
+        _optionsJsonMeta,
+        optionsJson.isAcceptableOrUnknown(
+          data['options_json']!,
+          _optionsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('default_value')) {
+      context.handle(
+        _defaultValueMeta,
+        defaultValue.isAcceptableOrUnknown(
+          data['default_value']!,
+          _defaultValueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_required')) {
+      context.handle(
+        _isRequiredMeta,
+        isRequired.isAcceptableOrUnknown(data['is_required']!, _isRequiredMeta),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('show_in_product_form')) {
+      context.handle(
+        _showInProductFormMeta,
+        showInProductForm.isAcceptableOrUnknown(
+          data['show_in_product_form']!,
+          _showInProductFormMeta,
+        ),
+      );
+    }
+    if (data.containsKey('show_in_p_o_s')) {
+      context.handle(
+        _showInPOSMeta,
+        showInPOS.isAcceptableOrUnknown(data['show_in_p_o_s']!, _showInPOSMeta),
+      );
+    }
+    if (data.containsKey('show_in_cart')) {
+      context.handle(
+        _showInCartMeta,
+        showInCart.isAcceptableOrUnknown(
+          data['show_in_cart']!,
+          _showInCartMeta,
+        ),
+      );
+    }
+    if (data.containsKey('show_in_invoice')) {
+      context.handle(
+        _showInInvoiceMeta,
+        showInInvoice.isAcceptableOrUnknown(
+          data['show_in_invoice']!,
+          _showInInvoiceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('show_in_search')) {
+      context.handle(
+        _showInSearchMeta,
+        showInSearch.isAcceptableOrUnknown(
+          data['show_in_search']!,
+          _showInSearchMeta,
+        ),
+      );
+    }
+    if (data.containsKey('show_in_reports')) {
+      context.handle(
+        _showInReportsMeta,
+        showInReports.isAcceptableOrUnknown(
+          data['show_in_reports']!,
+          _showInReportsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CustomFieldDefinition map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomFieldDefinition(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      securityKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}security_key'],
+      )!,
+      businessType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}business_type'],
+      ),
+      entityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_type'],
+      )!,
+      fieldKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}field_key'],
+      )!,
+      fieldLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}field_label'],
+      )!,
+      fieldType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}field_type'],
+      )!,
+      optionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}options_json'],
+      ),
+      defaultValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}default_value'],
+      ),
+      isRequired: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_required'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      showInProductForm: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}show_in_product_form'],
+      )!,
+      showInPOS: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}show_in_p_o_s'],
+      )!,
+      showInCart: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}show_in_cart'],
+      )!,
+      showInInvoice: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}show_in_invoice'],
+      )!,
+      showInSearch: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}show_in_search'],
+      )!,
+      showInReports: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}show_in_reports'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CustomFieldDefinitionsTable createAlias(String alias) {
+    return $CustomFieldDefinitionsTable(attachedDatabase, alias);
+  }
+}
+
+class CustomFieldDefinition extends DataClass
+    implements Insertable<CustomFieldDefinition> {
+  final int id;
+  final String securityKey;
+  final String? businessType;
+  final String entityType;
+  final String fieldKey;
+  final String fieldLabel;
+  final String fieldType;
+  final String? optionsJson;
+  final String? defaultValue;
+  final bool isRequired;
+  final bool isActive;
+  final bool showInProductForm;
+  final bool showInPOS;
+  final bool showInCart;
+  final bool showInInvoice;
+  final bool showInSearch;
+  final bool showInReports;
+  final int sortOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const CustomFieldDefinition({
+    required this.id,
+    required this.securityKey,
+    this.businessType,
+    required this.entityType,
+    required this.fieldKey,
+    required this.fieldLabel,
+    required this.fieldType,
+    this.optionsJson,
+    this.defaultValue,
+    required this.isRequired,
+    required this.isActive,
+    required this.showInProductForm,
+    required this.showInPOS,
+    required this.showInCart,
+    required this.showInInvoice,
+    required this.showInSearch,
+    required this.showInReports,
+    required this.sortOrder,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['security_key'] = Variable<String>(securityKey);
+    if (!nullToAbsent || businessType != null) {
+      map['business_type'] = Variable<String>(businessType);
+    }
+    map['entity_type'] = Variable<String>(entityType);
+    map['field_key'] = Variable<String>(fieldKey);
+    map['field_label'] = Variable<String>(fieldLabel);
+    map['field_type'] = Variable<String>(fieldType);
+    if (!nullToAbsent || optionsJson != null) {
+      map['options_json'] = Variable<String>(optionsJson);
+    }
+    if (!nullToAbsent || defaultValue != null) {
+      map['default_value'] = Variable<String>(defaultValue);
+    }
+    map['is_required'] = Variable<bool>(isRequired);
+    map['is_active'] = Variable<bool>(isActive);
+    map['show_in_product_form'] = Variable<bool>(showInProductForm);
+    map['show_in_p_o_s'] = Variable<bool>(showInPOS);
+    map['show_in_cart'] = Variable<bool>(showInCart);
+    map['show_in_invoice'] = Variable<bool>(showInInvoice);
+    map['show_in_search'] = Variable<bool>(showInSearch);
+    map['show_in_reports'] = Variable<bool>(showInReports);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  CustomFieldDefinitionsCompanion toCompanion(bool nullToAbsent) {
+    return CustomFieldDefinitionsCompanion(
+      id: Value(id),
+      securityKey: Value(securityKey),
+      businessType: businessType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(businessType),
+      entityType: Value(entityType),
+      fieldKey: Value(fieldKey),
+      fieldLabel: Value(fieldLabel),
+      fieldType: Value(fieldType),
+      optionsJson: optionsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(optionsJson),
+      defaultValue: defaultValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultValue),
+      isRequired: Value(isRequired),
+      isActive: Value(isActive),
+      showInProductForm: Value(showInProductForm),
+      showInPOS: Value(showInPOS),
+      showInCart: Value(showInCart),
+      showInInvoice: Value(showInInvoice),
+      showInSearch: Value(showInSearch),
+      showInReports: Value(showInReports),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory CustomFieldDefinition.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomFieldDefinition(
+      id: serializer.fromJson<int>(json['id']),
+      securityKey: serializer.fromJson<String>(json['securityKey']),
+      businessType: serializer.fromJson<String?>(json['businessType']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      fieldKey: serializer.fromJson<String>(json['fieldKey']),
+      fieldLabel: serializer.fromJson<String>(json['fieldLabel']),
+      fieldType: serializer.fromJson<String>(json['fieldType']),
+      optionsJson: serializer.fromJson<String?>(json['optionsJson']),
+      defaultValue: serializer.fromJson<String?>(json['defaultValue']),
+      isRequired: serializer.fromJson<bool>(json['isRequired']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      showInProductForm: serializer.fromJson<bool>(json['showInProductForm']),
+      showInPOS: serializer.fromJson<bool>(json['showInPOS']),
+      showInCart: serializer.fromJson<bool>(json['showInCart']),
+      showInInvoice: serializer.fromJson<bool>(json['showInInvoice']),
+      showInSearch: serializer.fromJson<bool>(json['showInSearch']),
+      showInReports: serializer.fromJson<bool>(json['showInReports']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'securityKey': serializer.toJson<String>(securityKey),
+      'businessType': serializer.toJson<String?>(businessType),
+      'entityType': serializer.toJson<String>(entityType),
+      'fieldKey': serializer.toJson<String>(fieldKey),
+      'fieldLabel': serializer.toJson<String>(fieldLabel),
+      'fieldType': serializer.toJson<String>(fieldType),
+      'optionsJson': serializer.toJson<String?>(optionsJson),
+      'defaultValue': serializer.toJson<String?>(defaultValue),
+      'isRequired': serializer.toJson<bool>(isRequired),
+      'isActive': serializer.toJson<bool>(isActive),
+      'showInProductForm': serializer.toJson<bool>(showInProductForm),
+      'showInPOS': serializer.toJson<bool>(showInPOS),
+      'showInCart': serializer.toJson<bool>(showInCart),
+      'showInInvoice': serializer.toJson<bool>(showInInvoice),
+      'showInSearch': serializer.toJson<bool>(showInSearch),
+      'showInReports': serializer.toJson<bool>(showInReports),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  CustomFieldDefinition copyWith({
+    int? id,
+    String? securityKey,
+    Value<String?> businessType = const Value.absent(),
+    String? entityType,
+    String? fieldKey,
+    String? fieldLabel,
+    String? fieldType,
+    Value<String?> optionsJson = const Value.absent(),
+    Value<String?> defaultValue = const Value.absent(),
+    bool? isRequired,
+    bool? isActive,
+    bool? showInProductForm,
+    bool? showInPOS,
+    bool? showInCart,
+    bool? showInInvoice,
+    bool? showInSearch,
+    bool? showInReports,
+    int? sortOrder,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => CustomFieldDefinition(
+    id: id ?? this.id,
+    securityKey: securityKey ?? this.securityKey,
+    businessType: businessType.present ? businessType.value : this.businessType,
+    entityType: entityType ?? this.entityType,
+    fieldKey: fieldKey ?? this.fieldKey,
+    fieldLabel: fieldLabel ?? this.fieldLabel,
+    fieldType: fieldType ?? this.fieldType,
+    optionsJson: optionsJson.present ? optionsJson.value : this.optionsJson,
+    defaultValue: defaultValue.present ? defaultValue.value : this.defaultValue,
+    isRequired: isRequired ?? this.isRequired,
+    isActive: isActive ?? this.isActive,
+    showInProductForm: showInProductForm ?? this.showInProductForm,
+    showInPOS: showInPOS ?? this.showInPOS,
+    showInCart: showInCart ?? this.showInCart,
+    showInInvoice: showInInvoice ?? this.showInInvoice,
+    showInSearch: showInSearch ?? this.showInSearch,
+    showInReports: showInReports ?? this.showInReports,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  CustomFieldDefinition copyWithCompanion(
+    CustomFieldDefinitionsCompanion data,
+  ) {
+    return CustomFieldDefinition(
+      id: data.id.present ? data.id.value : this.id,
+      securityKey: data.securityKey.present
+          ? data.securityKey.value
+          : this.securityKey,
+      businessType: data.businessType.present
+          ? data.businessType.value
+          : this.businessType,
+      entityType: data.entityType.present
+          ? data.entityType.value
+          : this.entityType,
+      fieldKey: data.fieldKey.present ? data.fieldKey.value : this.fieldKey,
+      fieldLabel: data.fieldLabel.present
+          ? data.fieldLabel.value
+          : this.fieldLabel,
+      fieldType: data.fieldType.present ? data.fieldType.value : this.fieldType,
+      optionsJson: data.optionsJson.present
+          ? data.optionsJson.value
+          : this.optionsJson,
+      defaultValue: data.defaultValue.present
+          ? data.defaultValue.value
+          : this.defaultValue,
+      isRequired: data.isRequired.present
+          ? data.isRequired.value
+          : this.isRequired,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      showInProductForm: data.showInProductForm.present
+          ? data.showInProductForm.value
+          : this.showInProductForm,
+      showInPOS: data.showInPOS.present ? data.showInPOS.value : this.showInPOS,
+      showInCart: data.showInCart.present
+          ? data.showInCart.value
+          : this.showInCart,
+      showInInvoice: data.showInInvoice.present
+          ? data.showInInvoice.value
+          : this.showInInvoice,
+      showInSearch: data.showInSearch.present
+          ? data.showInSearch.value
+          : this.showInSearch,
+      showInReports: data.showInReports.present
+          ? data.showInReports.value
+          : this.showInReports,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomFieldDefinition(')
+          ..write('id: $id, ')
+          ..write('securityKey: $securityKey, ')
+          ..write('businessType: $businessType, ')
+          ..write('entityType: $entityType, ')
+          ..write('fieldKey: $fieldKey, ')
+          ..write('fieldLabel: $fieldLabel, ')
+          ..write('fieldType: $fieldType, ')
+          ..write('optionsJson: $optionsJson, ')
+          ..write('defaultValue: $defaultValue, ')
+          ..write('isRequired: $isRequired, ')
+          ..write('isActive: $isActive, ')
+          ..write('showInProductForm: $showInProductForm, ')
+          ..write('showInPOS: $showInPOS, ')
+          ..write('showInCart: $showInCart, ')
+          ..write('showInInvoice: $showInInvoice, ')
+          ..write('showInSearch: $showInSearch, ')
+          ..write('showInReports: $showInReports, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    securityKey,
+    businessType,
+    entityType,
+    fieldKey,
+    fieldLabel,
+    fieldType,
+    optionsJson,
+    defaultValue,
+    isRequired,
+    isActive,
+    showInProductForm,
+    showInPOS,
+    showInCart,
+    showInInvoice,
+    showInSearch,
+    showInReports,
+    sortOrder,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomFieldDefinition &&
+          other.id == this.id &&
+          other.securityKey == this.securityKey &&
+          other.businessType == this.businessType &&
+          other.entityType == this.entityType &&
+          other.fieldKey == this.fieldKey &&
+          other.fieldLabel == this.fieldLabel &&
+          other.fieldType == this.fieldType &&
+          other.optionsJson == this.optionsJson &&
+          other.defaultValue == this.defaultValue &&
+          other.isRequired == this.isRequired &&
+          other.isActive == this.isActive &&
+          other.showInProductForm == this.showInProductForm &&
+          other.showInPOS == this.showInPOS &&
+          other.showInCart == this.showInCart &&
+          other.showInInvoice == this.showInInvoice &&
+          other.showInSearch == this.showInSearch &&
+          other.showInReports == this.showInReports &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class CustomFieldDefinitionsCompanion
+    extends UpdateCompanion<CustomFieldDefinition> {
+  final Value<int> id;
+  final Value<String> securityKey;
+  final Value<String?> businessType;
+  final Value<String> entityType;
+  final Value<String> fieldKey;
+  final Value<String> fieldLabel;
+  final Value<String> fieldType;
+  final Value<String?> optionsJson;
+  final Value<String?> defaultValue;
+  final Value<bool> isRequired;
+  final Value<bool> isActive;
+  final Value<bool> showInProductForm;
+  final Value<bool> showInPOS;
+  final Value<bool> showInCart;
+  final Value<bool> showInInvoice;
+  final Value<bool> showInSearch;
+  final Value<bool> showInReports;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const CustomFieldDefinitionsCompanion({
+    this.id = const Value.absent(),
+    this.securityKey = const Value.absent(),
+    this.businessType = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.fieldKey = const Value.absent(),
+    this.fieldLabel = const Value.absent(),
+    this.fieldType = const Value.absent(),
+    this.optionsJson = const Value.absent(),
+    this.defaultValue = const Value.absent(),
+    this.isRequired = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.showInProductForm = const Value.absent(),
+    this.showInPOS = const Value.absent(),
+    this.showInCart = const Value.absent(),
+    this.showInInvoice = const Value.absent(),
+    this.showInSearch = const Value.absent(),
+    this.showInReports = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  CustomFieldDefinitionsCompanion.insert({
+    this.id = const Value.absent(),
+    required String securityKey,
+    this.businessType = const Value.absent(),
+    required String entityType,
+    required String fieldKey,
+    required String fieldLabel,
+    required String fieldType,
+    this.optionsJson = const Value.absent(),
+    this.defaultValue = const Value.absent(),
+    this.isRequired = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.showInProductForm = const Value.absent(),
+    this.showInPOS = const Value.absent(),
+    this.showInCart = const Value.absent(),
+    this.showInInvoice = const Value.absent(),
+    this.showInSearch = const Value.absent(),
+    this.showInReports = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : securityKey = Value(securityKey),
+       entityType = Value(entityType),
+       fieldKey = Value(fieldKey),
+       fieldLabel = Value(fieldLabel),
+       fieldType = Value(fieldType);
+  static Insertable<CustomFieldDefinition> custom({
+    Expression<int>? id,
+    Expression<String>? securityKey,
+    Expression<String>? businessType,
+    Expression<String>? entityType,
+    Expression<String>? fieldKey,
+    Expression<String>? fieldLabel,
+    Expression<String>? fieldType,
+    Expression<String>? optionsJson,
+    Expression<String>? defaultValue,
+    Expression<bool>? isRequired,
+    Expression<bool>? isActive,
+    Expression<bool>? showInProductForm,
+    Expression<bool>? showInPOS,
+    Expression<bool>? showInCart,
+    Expression<bool>? showInInvoice,
+    Expression<bool>? showInSearch,
+    Expression<bool>? showInReports,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (securityKey != null) 'security_key': securityKey,
+      if (businessType != null) 'business_type': businessType,
+      if (entityType != null) 'entity_type': entityType,
+      if (fieldKey != null) 'field_key': fieldKey,
+      if (fieldLabel != null) 'field_label': fieldLabel,
+      if (fieldType != null) 'field_type': fieldType,
+      if (optionsJson != null) 'options_json': optionsJson,
+      if (defaultValue != null) 'default_value': defaultValue,
+      if (isRequired != null) 'is_required': isRequired,
+      if (isActive != null) 'is_active': isActive,
+      if (showInProductForm != null) 'show_in_product_form': showInProductForm,
+      if (showInPOS != null) 'show_in_p_o_s': showInPOS,
+      if (showInCart != null) 'show_in_cart': showInCart,
+      if (showInInvoice != null) 'show_in_invoice': showInInvoice,
+      if (showInSearch != null) 'show_in_search': showInSearch,
+      if (showInReports != null) 'show_in_reports': showInReports,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  CustomFieldDefinitionsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? securityKey,
+    Value<String?>? businessType,
+    Value<String>? entityType,
+    Value<String>? fieldKey,
+    Value<String>? fieldLabel,
+    Value<String>? fieldType,
+    Value<String?>? optionsJson,
+    Value<String?>? defaultValue,
+    Value<bool>? isRequired,
+    Value<bool>? isActive,
+    Value<bool>? showInProductForm,
+    Value<bool>? showInPOS,
+    Value<bool>? showInCart,
+    Value<bool>? showInInvoice,
+    Value<bool>? showInSearch,
+    Value<bool>? showInReports,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return CustomFieldDefinitionsCompanion(
+      id: id ?? this.id,
+      securityKey: securityKey ?? this.securityKey,
+      businessType: businessType ?? this.businessType,
+      entityType: entityType ?? this.entityType,
+      fieldKey: fieldKey ?? this.fieldKey,
+      fieldLabel: fieldLabel ?? this.fieldLabel,
+      fieldType: fieldType ?? this.fieldType,
+      optionsJson: optionsJson ?? this.optionsJson,
+      defaultValue: defaultValue ?? this.defaultValue,
+      isRequired: isRequired ?? this.isRequired,
+      isActive: isActive ?? this.isActive,
+      showInProductForm: showInProductForm ?? this.showInProductForm,
+      showInPOS: showInPOS ?? this.showInPOS,
+      showInCart: showInCart ?? this.showInCart,
+      showInInvoice: showInInvoice ?? this.showInInvoice,
+      showInSearch: showInSearch ?? this.showInSearch,
+      showInReports: showInReports ?? this.showInReports,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (securityKey.present) {
+      map['security_key'] = Variable<String>(securityKey.value);
+    }
+    if (businessType.present) {
+      map['business_type'] = Variable<String>(businessType.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (fieldKey.present) {
+      map['field_key'] = Variable<String>(fieldKey.value);
+    }
+    if (fieldLabel.present) {
+      map['field_label'] = Variable<String>(fieldLabel.value);
+    }
+    if (fieldType.present) {
+      map['field_type'] = Variable<String>(fieldType.value);
+    }
+    if (optionsJson.present) {
+      map['options_json'] = Variable<String>(optionsJson.value);
+    }
+    if (defaultValue.present) {
+      map['default_value'] = Variable<String>(defaultValue.value);
+    }
+    if (isRequired.present) {
+      map['is_required'] = Variable<bool>(isRequired.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (showInProductForm.present) {
+      map['show_in_product_form'] = Variable<bool>(showInProductForm.value);
+    }
+    if (showInPOS.present) {
+      map['show_in_p_o_s'] = Variable<bool>(showInPOS.value);
+    }
+    if (showInCart.present) {
+      map['show_in_cart'] = Variable<bool>(showInCart.value);
+    }
+    if (showInInvoice.present) {
+      map['show_in_invoice'] = Variable<bool>(showInInvoice.value);
+    }
+    if (showInSearch.present) {
+      map['show_in_search'] = Variable<bool>(showInSearch.value);
+    }
+    if (showInReports.present) {
+      map['show_in_reports'] = Variable<bool>(showInReports.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomFieldDefinitionsCompanion(')
+          ..write('id: $id, ')
+          ..write('securityKey: $securityKey, ')
+          ..write('businessType: $businessType, ')
+          ..write('entityType: $entityType, ')
+          ..write('fieldKey: $fieldKey, ')
+          ..write('fieldLabel: $fieldLabel, ')
+          ..write('fieldType: $fieldType, ')
+          ..write('optionsJson: $optionsJson, ')
+          ..write('defaultValue: $defaultValue, ')
+          ..write('isRequired: $isRequired, ')
+          ..write('isActive: $isActive, ')
+          ..write('showInProductForm: $showInProductForm, ')
+          ..write('showInPOS: $showInPOS, ')
+          ..write('showInCart: $showInCart, ')
+          ..write('showInInvoice: $showInInvoice, ')
+          ..write('showInSearch: $showInSearch, ')
+          ..write('showInReports: $showInReports, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CustomFieldValuesTable extends CustomFieldValues
+    with TableInfo<$CustomFieldValuesTable, CustomFieldValue> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomFieldValuesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _definitionIdMeta = const VerificationMeta(
+    'definitionId',
+  );
+  @override
+  late final GeneratedColumn<int> definitionId = GeneratedColumn<int>(
+    'definition_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES custom_field_definitions (id)',
+    ),
+  );
+  static const VerificationMeta _securityKeyMeta = const VerificationMeta(
+    'securityKey',
+  );
+  @override
+  late final GeneratedColumn<String> securityKey = GeneratedColumn<String>(
+    'security_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityTypeMeta = const VerificationMeta(
+    'entityType',
+  );
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+    'entity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<int> entityId = GeneratedColumn<int>(
+    'entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueTextMeta = const VerificationMeta(
+    'valueText',
+  );
+  @override
+  late final GeneratedColumn<String> valueText = GeneratedColumn<String>(
+    'value_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _valueNumberMeta = const VerificationMeta(
+    'valueNumber',
+  );
+  @override
+  late final GeneratedColumn<double> valueNumber = GeneratedColumn<double>(
+    'value_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _valueDateMeta = const VerificationMeta(
+    'valueDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> valueDate = GeneratedColumn<DateTime>(
+    'value_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _valueBoolMeta = const VerificationMeta(
+    'valueBool',
+  );
+  @override
+  late final GeneratedColumn<bool> valueBool = GeneratedColumn<bool>(
+    'value_bool',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("value_bool" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    definitionId,
+    securityKey,
+    entityType,
+    entityId,
+    valueText,
+    valueNumber,
+    valueDate,
+    valueBool,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'custom_field_values';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CustomFieldValue> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('definition_id')) {
+      context.handle(
+        _definitionIdMeta,
+        definitionId.isAcceptableOrUnknown(
+          data['definition_id']!,
+          _definitionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_definitionIdMeta);
+    }
+    if (data.containsKey('security_key')) {
+      context.handle(
+        _securityKeyMeta,
+        securityKey.isAcceptableOrUnknown(
+          data['security_key']!,
+          _securityKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_securityKeyMeta);
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+        _entityTypeMeta,
+        entityType.isAcceptableOrUnknown(data['entity_type']!, _entityTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('value_text')) {
+      context.handle(
+        _valueTextMeta,
+        valueText.isAcceptableOrUnknown(data['value_text']!, _valueTextMeta),
+      );
+    }
+    if (data.containsKey('value_number')) {
+      context.handle(
+        _valueNumberMeta,
+        valueNumber.isAcceptableOrUnknown(
+          data['value_number']!,
+          _valueNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('value_date')) {
+      context.handle(
+        _valueDateMeta,
+        valueDate.isAcceptableOrUnknown(data['value_date']!, _valueDateMeta),
+      );
+    }
+    if (data.containsKey('value_bool')) {
+      context.handle(
+        _valueBoolMeta,
+        valueBool.isAcceptableOrUnknown(data['value_bool']!, _valueBoolMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CustomFieldValue map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomFieldValue(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      definitionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}definition_id'],
+      )!,
+      securityKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}security_key'],
+      )!,
+      entityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_type'],
+      )!,
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}entity_id'],
+      )!,
+      valueText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value_text'],
+      ),
+      valueNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}value_number'],
+      ),
+      valueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}value_date'],
+      ),
+      valueBool: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}value_bool'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CustomFieldValuesTable createAlias(String alias) {
+    return $CustomFieldValuesTable(attachedDatabase, alias);
+  }
+}
+
+class CustomFieldValue extends DataClass
+    implements Insertable<CustomFieldValue> {
+  final int id;
+  final int definitionId;
+  final String securityKey;
+  final String entityType;
+  final int entityId;
+  final String? valueText;
+  final double? valueNumber;
+  final DateTime? valueDate;
+  final bool? valueBool;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const CustomFieldValue({
+    required this.id,
+    required this.definitionId,
+    required this.securityKey,
+    required this.entityType,
+    required this.entityId,
+    this.valueText,
+    this.valueNumber,
+    this.valueDate,
+    this.valueBool,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['definition_id'] = Variable<int>(definitionId);
+    map['security_key'] = Variable<String>(securityKey);
+    map['entity_type'] = Variable<String>(entityType);
+    map['entity_id'] = Variable<int>(entityId);
+    if (!nullToAbsent || valueText != null) {
+      map['value_text'] = Variable<String>(valueText);
+    }
+    if (!nullToAbsent || valueNumber != null) {
+      map['value_number'] = Variable<double>(valueNumber);
+    }
+    if (!nullToAbsent || valueDate != null) {
+      map['value_date'] = Variable<DateTime>(valueDate);
+    }
+    if (!nullToAbsent || valueBool != null) {
+      map['value_bool'] = Variable<bool>(valueBool);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  CustomFieldValuesCompanion toCompanion(bool nullToAbsent) {
+    return CustomFieldValuesCompanion(
+      id: Value(id),
+      definitionId: Value(definitionId),
+      securityKey: Value(securityKey),
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      valueText: valueText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(valueText),
+      valueNumber: valueNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(valueNumber),
+      valueDate: valueDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(valueDate),
+      valueBool: valueBool == null && nullToAbsent
+          ? const Value.absent()
+          : Value(valueBool),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory CustomFieldValue.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomFieldValue(
+      id: serializer.fromJson<int>(json['id']),
+      definitionId: serializer.fromJson<int>(json['definitionId']),
+      securityKey: serializer.fromJson<String>(json['securityKey']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      entityId: serializer.fromJson<int>(json['entityId']),
+      valueText: serializer.fromJson<String?>(json['valueText']),
+      valueNumber: serializer.fromJson<double?>(json['valueNumber']),
+      valueDate: serializer.fromJson<DateTime?>(json['valueDate']),
+      valueBool: serializer.fromJson<bool?>(json['valueBool']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'definitionId': serializer.toJson<int>(definitionId),
+      'securityKey': serializer.toJson<String>(securityKey),
+      'entityType': serializer.toJson<String>(entityType),
+      'entityId': serializer.toJson<int>(entityId),
+      'valueText': serializer.toJson<String?>(valueText),
+      'valueNumber': serializer.toJson<double?>(valueNumber),
+      'valueDate': serializer.toJson<DateTime?>(valueDate),
+      'valueBool': serializer.toJson<bool?>(valueBool),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  CustomFieldValue copyWith({
+    int? id,
+    int? definitionId,
+    String? securityKey,
+    String? entityType,
+    int? entityId,
+    Value<String?> valueText = const Value.absent(),
+    Value<double?> valueNumber = const Value.absent(),
+    Value<DateTime?> valueDate = const Value.absent(),
+    Value<bool?> valueBool = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => CustomFieldValue(
+    id: id ?? this.id,
+    definitionId: definitionId ?? this.definitionId,
+    securityKey: securityKey ?? this.securityKey,
+    entityType: entityType ?? this.entityType,
+    entityId: entityId ?? this.entityId,
+    valueText: valueText.present ? valueText.value : this.valueText,
+    valueNumber: valueNumber.present ? valueNumber.value : this.valueNumber,
+    valueDate: valueDate.present ? valueDate.value : this.valueDate,
+    valueBool: valueBool.present ? valueBool.value : this.valueBool,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  CustomFieldValue copyWithCompanion(CustomFieldValuesCompanion data) {
+    return CustomFieldValue(
+      id: data.id.present ? data.id.value : this.id,
+      definitionId: data.definitionId.present
+          ? data.definitionId.value
+          : this.definitionId,
+      securityKey: data.securityKey.present
+          ? data.securityKey.value
+          : this.securityKey,
+      entityType: data.entityType.present
+          ? data.entityType.value
+          : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      valueText: data.valueText.present ? data.valueText.value : this.valueText,
+      valueNumber: data.valueNumber.present
+          ? data.valueNumber.value
+          : this.valueNumber,
+      valueDate: data.valueDate.present ? data.valueDate.value : this.valueDate,
+      valueBool: data.valueBool.present ? data.valueBool.value : this.valueBool,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomFieldValue(')
+          ..write('id: $id, ')
+          ..write('definitionId: $definitionId, ')
+          ..write('securityKey: $securityKey, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('valueText: $valueText, ')
+          ..write('valueNumber: $valueNumber, ')
+          ..write('valueDate: $valueDate, ')
+          ..write('valueBool: $valueBool, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    definitionId,
+    securityKey,
+    entityType,
+    entityId,
+    valueText,
+    valueNumber,
+    valueDate,
+    valueBool,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomFieldValue &&
+          other.id == this.id &&
+          other.definitionId == this.definitionId &&
+          other.securityKey == this.securityKey &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.valueText == this.valueText &&
+          other.valueNumber == this.valueNumber &&
+          other.valueDate == this.valueDate &&
+          other.valueBool == this.valueBool &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class CustomFieldValuesCompanion extends UpdateCompanion<CustomFieldValue> {
+  final Value<int> id;
+  final Value<int> definitionId;
+  final Value<String> securityKey;
+  final Value<String> entityType;
+  final Value<int> entityId;
+  final Value<String?> valueText;
+  final Value<double?> valueNumber;
+  final Value<DateTime?> valueDate;
+  final Value<bool?> valueBool;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const CustomFieldValuesCompanion({
+    this.id = const Value.absent(),
+    this.definitionId = const Value.absent(),
+    this.securityKey = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.valueText = const Value.absent(),
+    this.valueNumber = const Value.absent(),
+    this.valueDate = const Value.absent(),
+    this.valueBool = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  CustomFieldValuesCompanion.insert({
+    this.id = const Value.absent(),
+    required int definitionId,
+    required String securityKey,
+    required String entityType,
+    required int entityId,
+    this.valueText = const Value.absent(),
+    this.valueNumber = const Value.absent(),
+    this.valueDate = const Value.absent(),
+    this.valueBool = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : definitionId = Value(definitionId),
+       securityKey = Value(securityKey),
+       entityType = Value(entityType),
+       entityId = Value(entityId);
+  static Insertable<CustomFieldValue> custom({
+    Expression<int>? id,
+    Expression<int>? definitionId,
+    Expression<String>? securityKey,
+    Expression<String>? entityType,
+    Expression<int>? entityId,
+    Expression<String>? valueText,
+    Expression<double>? valueNumber,
+    Expression<DateTime>? valueDate,
+    Expression<bool>? valueBool,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (definitionId != null) 'definition_id': definitionId,
+      if (securityKey != null) 'security_key': securityKey,
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (valueText != null) 'value_text': valueText,
+      if (valueNumber != null) 'value_number': valueNumber,
+      if (valueDate != null) 'value_date': valueDate,
+      if (valueBool != null) 'value_bool': valueBool,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  CustomFieldValuesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? definitionId,
+    Value<String>? securityKey,
+    Value<String>? entityType,
+    Value<int>? entityId,
+    Value<String?>? valueText,
+    Value<double?>? valueNumber,
+    Value<DateTime?>? valueDate,
+    Value<bool?>? valueBool,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return CustomFieldValuesCompanion(
+      id: id ?? this.id,
+      definitionId: definitionId ?? this.definitionId,
+      securityKey: securityKey ?? this.securityKey,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      valueText: valueText ?? this.valueText,
+      valueNumber: valueNumber ?? this.valueNumber,
+      valueDate: valueDate ?? this.valueDate,
+      valueBool: valueBool ?? this.valueBool,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (definitionId.present) {
+      map['definition_id'] = Variable<int>(definitionId.value);
+    }
+    if (securityKey.present) {
+      map['security_key'] = Variable<String>(securityKey.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<int>(entityId.value);
+    }
+    if (valueText.present) {
+      map['value_text'] = Variable<String>(valueText.value);
+    }
+    if (valueNumber.present) {
+      map['value_number'] = Variable<double>(valueNumber.value);
+    }
+    if (valueDate.present) {
+      map['value_date'] = Variable<DateTime>(valueDate.value);
+    }
+    if (valueBool.present) {
+      map['value_bool'] = Variable<bool>(valueBool.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomFieldValuesCompanion(')
+          ..write('id: $id, ')
+          ..write('definitionId: $definitionId, ')
+          ..write('securityKey: $securityKey, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('valueText: $valueText, ')
+          ..write('valueNumber: $valueNumber, ')
+          ..write('valueDate: $valueDate, ')
+          ..write('valueBool: $valueBool, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -4245,6 +6109,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CustomersTable customers = $CustomersTable(this);
   late final $SalesTable sales = $SalesTable(this);
   late final $SaleItemsTable saleItems = $SaleItemsTable(this);
+  late final $CustomFieldDefinitionsTable customFieldDefinitions =
+      $CustomFieldDefinitionsTable(this);
+  late final $CustomFieldValuesTable customFieldValues =
+      $CustomFieldValuesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4259,6 +6127,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     customers,
     sales,
     saleItems,
+    customFieldDefinitions,
+    customFieldValues,
   ];
 }
 
@@ -7170,6 +9040,7 @@ typedef $$SaleItemsTableCreateCompanionBuilder =
       required double total,
       Value<String?> unitName,
       Value<double> conversionFactor,
+      Value<String?> customFieldsJson,
     });
 typedef $$SaleItemsTableUpdateCompanionBuilder =
     SaleItemsCompanion Function({
@@ -7181,6 +9052,7 @@ typedef $$SaleItemsTableUpdateCompanionBuilder =
       Value<double> total,
       Value<String?> unitName,
       Value<double> conversionFactor,
+      Value<String?> customFieldsJson,
     });
 
 final class $$SaleItemsTableReferences
@@ -7259,6 +9131,11 @@ class $$SaleItemsTableFilterComposer
 
   ColumnFilters<double> get conversionFactor => $composableBuilder(
     column: $table.conversionFactor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customFieldsJson => $composableBuilder(
+    column: $table.customFieldsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7348,6 +9225,11 @@ class $$SaleItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get customFieldsJson => $composableBuilder(
+    column: $table.customFieldsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$SalesTableOrderingComposer get saleId {
     final $$SalesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -7421,6 +9303,11 @@ class $$SaleItemsTableAnnotationComposer
 
   GeneratedColumn<double> get conversionFactor => $composableBuilder(
     column: $table.conversionFactor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get customFieldsJson => $composableBuilder(
+    column: $table.customFieldsJson,
     builder: (column) => column,
   );
 
@@ -7507,6 +9394,7 @@ class $$SaleItemsTableTableManager
                 Value<double> total = const Value.absent(),
                 Value<String?> unitName = const Value.absent(),
                 Value<double> conversionFactor = const Value.absent(),
+                Value<String?> customFieldsJson = const Value.absent(),
               }) => SaleItemsCompanion(
                 id: id,
                 saleId: saleId,
@@ -7516,6 +9404,7 @@ class $$SaleItemsTableTableManager
                 total: total,
                 unitName: unitName,
                 conversionFactor: conversionFactor,
+                customFieldsJson: customFieldsJson,
               ),
           createCompanionCallback:
               ({
@@ -7527,6 +9416,7 @@ class $$SaleItemsTableTableManager
                 required double total,
                 Value<String?> unitName = const Value.absent(),
                 Value<double> conversionFactor = const Value.absent(),
+                Value<String?> customFieldsJson = const Value.absent(),
               }) => SaleItemsCompanion.insert(
                 id: id,
                 saleId: saleId,
@@ -7536,6 +9426,7 @@ class $$SaleItemsTableTableManager
                 total: total,
                 unitName: unitName,
                 conversionFactor: conversionFactor,
+                customFieldsJson: customFieldsJson,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -7617,6 +9508,1096 @@ typedef $$SaleItemsTableProcessedTableManager =
       SaleItem,
       PrefetchHooks Function({bool saleId, bool batchId})
     >;
+typedef $$CustomFieldDefinitionsTableCreateCompanionBuilder =
+    CustomFieldDefinitionsCompanion Function({
+      Value<int> id,
+      required String securityKey,
+      Value<String?> businessType,
+      required String entityType,
+      required String fieldKey,
+      required String fieldLabel,
+      required String fieldType,
+      Value<String?> optionsJson,
+      Value<String?> defaultValue,
+      Value<bool> isRequired,
+      Value<bool> isActive,
+      Value<bool> showInProductForm,
+      Value<bool> showInPOS,
+      Value<bool> showInCart,
+      Value<bool> showInInvoice,
+      Value<bool> showInSearch,
+      Value<bool> showInReports,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$CustomFieldDefinitionsTableUpdateCompanionBuilder =
+    CustomFieldDefinitionsCompanion Function({
+      Value<int> id,
+      Value<String> securityKey,
+      Value<String?> businessType,
+      Value<String> entityType,
+      Value<String> fieldKey,
+      Value<String> fieldLabel,
+      Value<String> fieldType,
+      Value<String?> optionsJson,
+      Value<String?> defaultValue,
+      Value<bool> isRequired,
+      Value<bool> isActive,
+      Value<bool> showInProductForm,
+      Value<bool> showInPOS,
+      Value<bool> showInCart,
+      Value<bool> showInInvoice,
+      Value<bool> showInSearch,
+      Value<bool> showInReports,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$CustomFieldDefinitionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $CustomFieldDefinitionsTable,
+          CustomFieldDefinition
+        > {
+  $$CustomFieldDefinitionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$CustomFieldValuesTable, List<CustomFieldValue>>
+  _customFieldValuesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.customFieldValues,
+        aliasName: $_aliasNameGenerator(
+          db.customFieldDefinitions.id,
+          db.customFieldValues.definitionId,
+        ),
+      );
+
+  $$CustomFieldValuesTableProcessedTableManager get customFieldValuesRefs {
+    final manager = $$CustomFieldValuesTableTableManager(
+      $_db,
+      $_db.customFieldValues,
+    ).filter((f) => f.definitionId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _customFieldValuesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$CustomFieldDefinitionsTableFilterComposer
+    extends Composer<_$AppDatabase, $CustomFieldDefinitionsTable> {
+  $$CustomFieldDefinitionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get securityKey => $composableBuilder(
+    column: $table.securityKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get businessType => $composableBuilder(
+    column: $table.businessType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fieldKey => $composableBuilder(
+    column: $table.fieldKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fieldLabel => $composableBuilder(
+    column: $table.fieldLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fieldType => $composableBuilder(
+    column: $table.fieldType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get optionsJson => $composableBuilder(
+    column: $table.optionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get defaultValue => $composableBuilder(
+    column: $table.defaultValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isRequired => $composableBuilder(
+    column: $table.isRequired,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get showInProductForm => $composableBuilder(
+    column: $table.showInProductForm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get showInPOS => $composableBuilder(
+    column: $table.showInPOS,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get showInCart => $composableBuilder(
+    column: $table.showInCart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get showInInvoice => $composableBuilder(
+    column: $table.showInInvoice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get showInSearch => $composableBuilder(
+    column: $table.showInSearch,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get showInReports => $composableBuilder(
+    column: $table.showInReports,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> customFieldValuesRefs(
+    Expression<bool> Function($$CustomFieldValuesTableFilterComposer f) f,
+  ) {
+    final $$CustomFieldValuesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.customFieldValues,
+      getReferencedColumn: (t) => t.definitionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CustomFieldValuesTableFilterComposer(
+            $db: $db,
+            $table: $db.customFieldValues,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$CustomFieldDefinitionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CustomFieldDefinitionsTable> {
+  $$CustomFieldDefinitionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get securityKey => $composableBuilder(
+    column: $table.securityKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get businessType => $composableBuilder(
+    column: $table.businessType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fieldKey => $composableBuilder(
+    column: $table.fieldKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fieldLabel => $composableBuilder(
+    column: $table.fieldLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fieldType => $composableBuilder(
+    column: $table.fieldType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get optionsJson => $composableBuilder(
+    column: $table.optionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get defaultValue => $composableBuilder(
+    column: $table.defaultValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isRequired => $composableBuilder(
+    column: $table.isRequired,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get showInProductForm => $composableBuilder(
+    column: $table.showInProductForm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get showInPOS => $composableBuilder(
+    column: $table.showInPOS,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get showInCart => $composableBuilder(
+    column: $table.showInCart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get showInInvoice => $composableBuilder(
+    column: $table.showInInvoice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get showInSearch => $composableBuilder(
+    column: $table.showInSearch,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get showInReports => $composableBuilder(
+    column: $table.showInReports,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CustomFieldDefinitionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CustomFieldDefinitionsTable> {
+  $$CustomFieldDefinitionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get securityKey => $composableBuilder(
+    column: $table.securityKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get businessType => $composableBuilder(
+    column: $table.businessType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fieldKey =>
+      $composableBuilder(column: $table.fieldKey, builder: (column) => column);
+
+  GeneratedColumn<String> get fieldLabel => $composableBuilder(
+    column: $table.fieldLabel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fieldType =>
+      $composableBuilder(column: $table.fieldType, builder: (column) => column);
+
+  GeneratedColumn<String> get optionsJson => $composableBuilder(
+    column: $table.optionsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get defaultValue => $composableBuilder(
+    column: $table.defaultValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isRequired => $composableBuilder(
+    column: $table.isRequired,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<bool> get showInProductForm => $composableBuilder(
+    column: $table.showInProductForm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get showInPOS =>
+      $composableBuilder(column: $table.showInPOS, builder: (column) => column);
+
+  GeneratedColumn<bool> get showInCart => $composableBuilder(
+    column: $table.showInCart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get showInInvoice => $composableBuilder(
+    column: $table.showInInvoice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get showInSearch => $composableBuilder(
+    column: $table.showInSearch,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get showInReports => $composableBuilder(
+    column: $table.showInReports,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> customFieldValuesRefs<T extends Object>(
+    Expression<T> Function($$CustomFieldValuesTableAnnotationComposer a) f,
+  ) {
+    final $$CustomFieldValuesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.customFieldValues,
+          getReferencedColumn: (t) => t.definitionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$CustomFieldValuesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.customFieldValues,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$CustomFieldDefinitionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CustomFieldDefinitionsTable,
+          CustomFieldDefinition,
+          $$CustomFieldDefinitionsTableFilterComposer,
+          $$CustomFieldDefinitionsTableOrderingComposer,
+          $$CustomFieldDefinitionsTableAnnotationComposer,
+          $$CustomFieldDefinitionsTableCreateCompanionBuilder,
+          $$CustomFieldDefinitionsTableUpdateCompanionBuilder,
+          (CustomFieldDefinition, $$CustomFieldDefinitionsTableReferences),
+          CustomFieldDefinition,
+          PrefetchHooks Function({bool customFieldValuesRefs})
+        > {
+  $$CustomFieldDefinitionsTableTableManager(
+    _$AppDatabase db,
+    $CustomFieldDefinitionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomFieldDefinitionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$CustomFieldDefinitionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CustomFieldDefinitionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> securityKey = const Value.absent(),
+                Value<String?> businessType = const Value.absent(),
+                Value<String> entityType = const Value.absent(),
+                Value<String> fieldKey = const Value.absent(),
+                Value<String> fieldLabel = const Value.absent(),
+                Value<String> fieldType = const Value.absent(),
+                Value<String?> optionsJson = const Value.absent(),
+                Value<String?> defaultValue = const Value.absent(),
+                Value<bool> isRequired = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<bool> showInProductForm = const Value.absent(),
+                Value<bool> showInPOS = const Value.absent(),
+                Value<bool> showInCart = const Value.absent(),
+                Value<bool> showInInvoice = const Value.absent(),
+                Value<bool> showInSearch = const Value.absent(),
+                Value<bool> showInReports = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => CustomFieldDefinitionsCompanion(
+                id: id,
+                securityKey: securityKey,
+                businessType: businessType,
+                entityType: entityType,
+                fieldKey: fieldKey,
+                fieldLabel: fieldLabel,
+                fieldType: fieldType,
+                optionsJson: optionsJson,
+                defaultValue: defaultValue,
+                isRequired: isRequired,
+                isActive: isActive,
+                showInProductForm: showInProductForm,
+                showInPOS: showInPOS,
+                showInCart: showInCart,
+                showInInvoice: showInInvoice,
+                showInSearch: showInSearch,
+                showInReports: showInReports,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String securityKey,
+                Value<String?> businessType = const Value.absent(),
+                required String entityType,
+                required String fieldKey,
+                required String fieldLabel,
+                required String fieldType,
+                Value<String?> optionsJson = const Value.absent(),
+                Value<String?> defaultValue = const Value.absent(),
+                Value<bool> isRequired = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<bool> showInProductForm = const Value.absent(),
+                Value<bool> showInPOS = const Value.absent(),
+                Value<bool> showInCart = const Value.absent(),
+                Value<bool> showInInvoice = const Value.absent(),
+                Value<bool> showInSearch = const Value.absent(),
+                Value<bool> showInReports = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => CustomFieldDefinitionsCompanion.insert(
+                id: id,
+                securityKey: securityKey,
+                businessType: businessType,
+                entityType: entityType,
+                fieldKey: fieldKey,
+                fieldLabel: fieldLabel,
+                fieldType: fieldType,
+                optionsJson: optionsJson,
+                defaultValue: defaultValue,
+                isRequired: isRequired,
+                isActive: isActive,
+                showInProductForm: showInProductForm,
+                showInPOS: showInPOS,
+                showInCart: showInCart,
+                showInInvoice: showInInvoice,
+                showInSearch: showInSearch,
+                showInReports: showInReports,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CustomFieldDefinitionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({customFieldValuesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (customFieldValuesRefs) db.customFieldValues,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (customFieldValuesRefs)
+                    await $_getPrefetchedData<
+                      CustomFieldDefinition,
+                      $CustomFieldDefinitionsTable,
+                      CustomFieldValue
+                    >(
+                      currentTable: table,
+                      referencedTable: $$CustomFieldDefinitionsTableReferences
+                          ._customFieldValuesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$CustomFieldDefinitionsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).customFieldValuesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.definitionId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CustomFieldDefinitionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CustomFieldDefinitionsTable,
+      CustomFieldDefinition,
+      $$CustomFieldDefinitionsTableFilterComposer,
+      $$CustomFieldDefinitionsTableOrderingComposer,
+      $$CustomFieldDefinitionsTableAnnotationComposer,
+      $$CustomFieldDefinitionsTableCreateCompanionBuilder,
+      $$CustomFieldDefinitionsTableUpdateCompanionBuilder,
+      (CustomFieldDefinition, $$CustomFieldDefinitionsTableReferences),
+      CustomFieldDefinition,
+      PrefetchHooks Function({bool customFieldValuesRefs})
+    >;
+typedef $$CustomFieldValuesTableCreateCompanionBuilder =
+    CustomFieldValuesCompanion Function({
+      Value<int> id,
+      required int definitionId,
+      required String securityKey,
+      required String entityType,
+      required int entityId,
+      Value<String?> valueText,
+      Value<double?> valueNumber,
+      Value<DateTime?> valueDate,
+      Value<bool?> valueBool,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$CustomFieldValuesTableUpdateCompanionBuilder =
+    CustomFieldValuesCompanion Function({
+      Value<int> id,
+      Value<int> definitionId,
+      Value<String> securityKey,
+      Value<String> entityType,
+      Value<int> entityId,
+      Value<String?> valueText,
+      Value<double?> valueNumber,
+      Value<DateTime?> valueDate,
+      Value<bool?> valueBool,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$CustomFieldValuesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $CustomFieldValuesTable,
+          CustomFieldValue
+        > {
+  $$CustomFieldValuesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $CustomFieldDefinitionsTable _definitionIdTable(_$AppDatabase db) =>
+      db.customFieldDefinitions.createAlias(
+        $_aliasNameGenerator(
+          db.customFieldValues.definitionId,
+          db.customFieldDefinitions.id,
+        ),
+      );
+
+  $$CustomFieldDefinitionsTableProcessedTableManager get definitionId {
+    final $_column = $_itemColumn<int>('definition_id')!;
+
+    final manager = $$CustomFieldDefinitionsTableTableManager(
+      $_db,
+      $_db.customFieldDefinitions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_definitionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$CustomFieldValuesTableFilterComposer
+    extends Composer<_$AppDatabase, $CustomFieldValuesTable> {
+  $$CustomFieldValuesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get securityKey => $composableBuilder(
+    column: $table.securityKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get valueText => $composableBuilder(
+    column: $table.valueText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get valueNumber => $composableBuilder(
+    column: $table.valueNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get valueDate => $composableBuilder(
+    column: $table.valueDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get valueBool => $composableBuilder(
+    column: $table.valueBool,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CustomFieldDefinitionsTableFilterComposer get definitionId {
+    final $$CustomFieldDefinitionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.definitionId,
+          referencedTable: $db.customFieldDefinitions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$CustomFieldDefinitionsTableFilterComposer(
+                $db: $db,
+                $table: $db.customFieldDefinitions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$CustomFieldValuesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CustomFieldValuesTable> {
+  $$CustomFieldValuesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get securityKey => $composableBuilder(
+    column: $table.securityKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get valueText => $composableBuilder(
+    column: $table.valueText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get valueNumber => $composableBuilder(
+    column: $table.valueNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get valueDate => $composableBuilder(
+    column: $table.valueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get valueBool => $composableBuilder(
+    column: $table.valueBool,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CustomFieldDefinitionsTableOrderingComposer get definitionId {
+    final $$CustomFieldDefinitionsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.definitionId,
+          referencedTable: $db.customFieldDefinitions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$CustomFieldDefinitionsTableOrderingComposer(
+                $db: $db,
+                $table: $db.customFieldDefinitions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$CustomFieldValuesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CustomFieldValuesTable> {
+  $$CustomFieldValuesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get securityKey => $composableBuilder(
+    column: $table.securityKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get valueText =>
+      $composableBuilder(column: $table.valueText, builder: (column) => column);
+
+  GeneratedColumn<double> get valueNumber => $composableBuilder(
+    column: $table.valueNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get valueDate =>
+      $composableBuilder(column: $table.valueDate, builder: (column) => column);
+
+  GeneratedColumn<bool> get valueBool =>
+      $composableBuilder(column: $table.valueBool, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$CustomFieldDefinitionsTableAnnotationComposer get definitionId {
+    final $$CustomFieldDefinitionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.definitionId,
+          referencedTable: $db.customFieldDefinitions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$CustomFieldDefinitionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.customFieldDefinitions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$CustomFieldValuesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CustomFieldValuesTable,
+          CustomFieldValue,
+          $$CustomFieldValuesTableFilterComposer,
+          $$CustomFieldValuesTableOrderingComposer,
+          $$CustomFieldValuesTableAnnotationComposer,
+          $$CustomFieldValuesTableCreateCompanionBuilder,
+          $$CustomFieldValuesTableUpdateCompanionBuilder,
+          (CustomFieldValue, $$CustomFieldValuesTableReferences),
+          CustomFieldValue,
+          PrefetchHooks Function({bool definitionId})
+        > {
+  $$CustomFieldValuesTableTableManager(
+    _$AppDatabase db,
+    $CustomFieldValuesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomFieldValuesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CustomFieldValuesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CustomFieldValuesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> definitionId = const Value.absent(),
+                Value<String> securityKey = const Value.absent(),
+                Value<String> entityType = const Value.absent(),
+                Value<int> entityId = const Value.absent(),
+                Value<String?> valueText = const Value.absent(),
+                Value<double?> valueNumber = const Value.absent(),
+                Value<DateTime?> valueDate = const Value.absent(),
+                Value<bool?> valueBool = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => CustomFieldValuesCompanion(
+                id: id,
+                definitionId: definitionId,
+                securityKey: securityKey,
+                entityType: entityType,
+                entityId: entityId,
+                valueText: valueText,
+                valueNumber: valueNumber,
+                valueDate: valueDate,
+                valueBool: valueBool,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int definitionId,
+                required String securityKey,
+                required String entityType,
+                required int entityId,
+                Value<String?> valueText = const Value.absent(),
+                Value<double?> valueNumber = const Value.absent(),
+                Value<DateTime?> valueDate = const Value.absent(),
+                Value<bool?> valueBool = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => CustomFieldValuesCompanion.insert(
+                id: id,
+                definitionId: definitionId,
+                securityKey: securityKey,
+                entityType: entityType,
+                entityId: entityId,
+                valueText: valueText,
+                valueNumber: valueNumber,
+                valueDate: valueDate,
+                valueBool: valueBool,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CustomFieldValuesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({definitionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (definitionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.definitionId,
+                                referencedTable:
+                                    $$CustomFieldValuesTableReferences
+                                        ._definitionIdTable(db),
+                                referencedColumn:
+                                    $$CustomFieldValuesTableReferences
+                                        ._definitionIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$CustomFieldValuesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CustomFieldValuesTable,
+      CustomFieldValue,
+      $$CustomFieldValuesTableFilterComposer,
+      $$CustomFieldValuesTableOrderingComposer,
+      $$CustomFieldValuesTableAnnotationComposer,
+      $$CustomFieldValuesTableCreateCompanionBuilder,
+      $$CustomFieldValuesTableUpdateCompanionBuilder,
+      (CustomFieldValue, $$CustomFieldValuesTableReferences),
+      CustomFieldValue,
+      PrefetchHooks Function({bool definitionId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7639,4 +10620,11 @@ class $AppDatabaseManager {
       $$SalesTableTableManager(_db, _db.sales);
   $$SaleItemsTableTableManager get saleItems =>
       $$SaleItemsTableTableManager(_db, _db.saleItems);
+  $$CustomFieldDefinitionsTableTableManager get customFieldDefinitions =>
+      $$CustomFieldDefinitionsTableTableManager(
+        _db,
+        _db.customFieldDefinitions,
+      );
+  $$CustomFieldValuesTableTableManager get customFieldValues =>
+      $$CustomFieldValuesTableTableManager(_db, _db.customFieldValues);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/settings_repository.dart';
+import '../../data/services/business_preset_service.dart';
 import '../shared/app_theme.dart';
 
 class InventoryFlowSettingsScreen extends ConsumerStatefulWidget {
@@ -38,6 +39,7 @@ class _InventoryFlowSettingsScreenState extends ConsumerState<InventoryFlowSetti
   // POS Behavior
   bool _posShowUnitSelector = false;
   bool _posBlockOOS = false;
+  bool _stockTrackingEnabled = true;
 
   @override
   void initState() {
@@ -70,6 +72,7 @@ class _InventoryFlowSettingsScreenState extends ConsumerState<InventoryFlowSetti
     final multiUnit = await repo.getSetting('inv_multi_unit');
     final posUnitSel = await repo.getSetting('pos_show_unit_selector');
     final blockOOS = await repo.getSetting('pos_block_oos');
+    final stockTracking = await repo.getSetting('inv_stock_tracking_enabled');
 
     if (mounted) {
       setState(() {
@@ -93,7 +96,7 @@ class _InventoryFlowSettingsScreenState extends ConsumerState<InventoryFlowSetti
         
         _posShowUnitSelector = posUnitSel == 'true';
         _posBlockOOS = blockOOS == 'true';
-        
+        _stockTrackingEnabled = stockTracking != 'false';
         _isLoading = false;
       });
     }
@@ -103,71 +106,12 @@ class _InventoryFlowSettingsScreenState extends ConsumerState<InventoryFlowSetti
     await ref.read(settingsRepositoryProvider).saveSetting(key, value);
   }
 
-  void _applyPreset(String type) {
-    setState(() {
-      _businessType = type;
-      _saveSetting('inv_business_type', type);
-      
-      if (type == 'Pharmacy') {
-        _showBrand = true;
-        _showGenericName = true;
-        _showStrength = true;
-        _showDosageForm = true;
-        _enableBatch = true;
-        _enableExpiry = true;
-        _enableMultiUnit = true;
-        _posShowUnitSelector = true;
-      } else if (type == 'Electronics') {
-        _showBrand = true;
-        _showModel = true;
-        _showGenericName = false;
-        _enableBatch = true;
-        _enableExpiry = false;
-        _enableMultiUnit = false;
-      } else if (type == 'Grocery') {
-        _showBrand = false;
-        _showGenericName = false;
-        _enableBatch = false;
-        _enableExpiry = true;
-        _enableMultiUnit = true;
-      } else if (type == 'General') {
-        _showBrand = true;
-        _showModel = false;
-        _showGenericName = false;
-        _enableBatch = true;
-        _enableExpiry = true;
-        _enableMultiUnit = false;
-      }
-      
-      // Save all changed values
-      _saveAll();
-    });
+  Future<void> _applyPreset(String type) async {
+    setState(() => _isLoading = true);
+    await ref.read(businessPresetServiceProvider).applyPresetFromBusinessType(type);
+    await _loadSettings();
   }
 
-  Future<void> _saveAll() async {
-    _saveSetting('form_show_brand', _showBrand.toString());
-    _saveSetting('form_show_manufacturer', _showBrand.toString()); // Sync with old key
-    _saveSetting('form_show_model', _showModel.toString());
-    _saveSetting('form_show_generic_name', _showGenericName.toString());
-    _saveSetting('form_show_strength', _showStrength.toString());
-    _saveSetting('form_show_dosage_form', _showDosageForm.toString());
-    _saveSetting('form_show_sku', _showSKU.toString());
-    _saveSetting('form_show_barcode', _showBarcode.toString());
-    _saveSetting('form_show_image', _showImage.toString());
-    _saveSetting('form_show_category', _showCategory.toString());
-    _saveSetting('form_show_sub_category', _showSubCategory.toString());
-    _saveSetting('form_show_min_stock', _showMinStock.toString());
-    
-    _saveSetting('inv_enable_batch', _enableBatch.toString());
-    _saveSetting('form_show_batch_number', _enableBatch.toString()); // Sync
-    _saveSetting('inv_enable_expiry', _enableExpiry.toString());
-    _saveSetting('form_show_expiry_date', _enableExpiry.toString()); // Sync
-    _saveSetting('inv_multi_unit', _enableMultiUnit.toString());
-    _saveSetting('form_show_purchase_price', _showPurchasePrice.toString());
-    
-    _saveSetting('pos_show_unit_selector', _posShowUnitSelector.toString());
-    _saveSetting('pos_block_oos', _posBlockOOS.toString());
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,6 +177,7 @@ class _InventoryFlowSettingsScreenState extends ConsumerState<InventoryFlowSetti
                   [
                     _buildSwitch('Enable Unit Selector in POS', _posShowUnitSelector, (v) => setState(() { _posShowUnitSelector = v; _saveSetting('pos_show_unit_selector', v.toString()); })),
                     _buildSwitch('Strict Stock Control (Block if 0)', _posBlockOOS, (v) => setState(() { _posBlockOOS = v; _saveSetting('pos_block_oos', v.toString()); })),
+                    _buildSwitch('Stock Tracking Enabled', _stockTrackingEnabled, (v) => setState(() { _stockTrackingEnabled = v; _saveSetting('inv_stock_tracking_enabled', v.toString()); })),
                   ]
                 ),
                 
@@ -254,36 +199,34 @@ class _InventoryFlowSettingsScreenState extends ConsumerState<InventoryFlowSetti
   }
 
   Widget _buildPresetSelector() {
-    final types = ['General', 'Pharmacy', 'Grocery', 'Electronics'];
-    return Row(
+    final types = ['General', 'Pharmacy', 'Grocery', 'Electronics', 'Restaurant', 'Clothing'];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: types.map((t) => _buildPresetChip(t)).toList(),
     );
   }
 
   Widget _buildPresetChip(String type) {
     final active = _businessType == type;
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: InkWell(
-          onTap: () => _applyPreset(type),
+    return InkWell(
+      onTap: () => _applyPreset(type),
+      borderRadius: BorderRadius.circular(AppTheme.r12),
+      child: Container(
+        width: 110,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: active ? AppTheme.royalBlue : AppTheme.surface,
           borderRadius: BorderRadius.circular(AppTheme.r12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: active ? AppTheme.royalBlue : AppTheme.surface,
-              borderRadius: BorderRadius.circular(AppTheme.r12),
-              border: Border.all(color: active ? AppTheme.royalBlue : AppTheme.border),
-              boxShadow: active ? AppTheme.softShadow : null,
-            ),
-            child: Column(
-              children: [
-                Icon(_getIconForType(type), color: active ? Colors.white : AppTheme.textSecondary, size: 24),
-                const SizedBox(height: 8),
-                Text(type, style: TextStyle(color: active ? Colors.white : AppTheme.textSecondary, fontWeight: FontWeight.w800, fontSize: 12)),
-              ],
-            ),
-          ),
+          border: Border.all(color: active ? AppTheme.royalBlue : AppTheme.border),
+          boxShadow: active ? AppTheme.softShadow : null,
+        ),
+        child: Column(
+          children: [
+            Icon(_getIconForType(type), color: active ? Colors.white : AppTheme.textSecondary, size: 22),
+            const SizedBox(height: 6),
+            Text(type, style: TextStyle(color: active ? Colors.white : AppTheme.textSecondary, fontWeight: FontWeight.w800, fontSize: 11), textAlign: TextAlign.center),
+          ],
         ),
       ),
     );
@@ -294,6 +237,8 @@ class _InventoryFlowSettingsScreenState extends ConsumerState<InventoryFlowSetti
       case 'Pharmacy': return Icons.medical_services_rounded;
       case 'Grocery': return Icons.local_grocery_store_rounded;
       case 'Electronics': return Icons.devices_other_rounded;
+      case 'Restaurant': return Icons.restaurant_rounded;
+      case 'Clothing': return Icons.checkroom_rounded;
       default: return Icons.storefront_rounded;
     }
   }
@@ -327,7 +272,7 @@ class _InventoryFlowSettingsScreenState extends ConsumerState<InventoryFlowSetti
       title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
       value: value,
       onChanged: onChanged,
-      activeColor: AppTheme.royalBlue,
+      activeThumbColor: AppTheme.royalBlue,
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
     );
   }

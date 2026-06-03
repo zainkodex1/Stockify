@@ -120,14 +120,56 @@ class SaleItems extends Table {
   RealColumn get total => real()();
   TextColumn get unitName => text().nullable()(); // Added in v9
   RealColumn get conversionFactor => real().withDefault(const Constant(1.0))(); // Added in v9
+  TextColumn get customFieldsJson => text().nullable()(); // Added in v10 for snapshotting
 }
 
-@DriftDatabase(tables: [Users, Settings, Categories, Medicines, Batches, ProductUnits, Customers, Sales, SaleItems])
+// --- Custom Fields Engine Tables ---
+
+@DataClassName('CustomFieldDefinition')
+class CustomFieldDefinitions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get securityKey => text()(); // Isolates custom fields per shop
+  TextColumn get businessType => text().nullable()(); // e.g. Pharmacy, Electronics (null = global)
+  TextColumn get entityType => text()(); // 'product', 'customer', 'sale', 'saleItem', 'invoice'
+  TextColumn get fieldKey => text()(); // Safe unique key per entity e.g. 'rack_no'
+  TextColumn get fieldLabel => text()();
+  TextColumn get fieldType => text()(); // 'text', 'number', 'decimal', 'date', 'dropdown', 'checkbox', 'textarea'
+  TextColumn get optionsJson => text().nullable()(); // JSON list for dropdown choices
+  TextColumn get defaultValue => text().nullable()();
+  BoolColumn get isRequired => boolean().withDefault(const Constant(false))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  BoolColumn get showInProductForm => boolean().withDefault(const Constant(false))();
+  BoolColumn get showInPOS => boolean().withDefault(const Constant(false))();
+  BoolColumn get showInCart => boolean().withDefault(const Constant(false))();
+  BoolColumn get showInInvoice => boolean().withDefault(const Constant(false))();
+  BoolColumn get showInSearch => boolean().withDefault(const Constant(false))();
+  BoolColumn get showInReports => boolean().withDefault(const Constant(false))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DataClassName('CustomFieldValue')
+class CustomFieldValues extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get definitionId => integer().references(CustomFieldDefinitions, #id)();
+  TextColumn get securityKey => text()(); // Security isolation
+  TextColumn get entityType => text()();
+  IntColumn get entityId => integer()(); // E.g. medicineId
+  TextColumn get valueText => text().nullable()();
+  RealColumn get valueNumber => real().nullable()();
+  DateTimeColumn get valueDate => dateTime().nullable()();
+  BoolColumn get valueBool => boolean().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DriftDatabase(tables: [Users, Settings, Categories, Medicines, Batches, ProductUnits, Customers, Sales, SaleItems, CustomFieldDefinitions, CustomFieldValues])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 9; // Updated to 9
+  int get schemaVersion => 10; // Updated to 10 for Custom Fields Engine
 
   @override
   MigrationStrategy get migration {
@@ -188,6 +230,11 @@ class AppDatabase extends _$AppDatabase {
         if (from < 9) {
           await m.addColumn(saleItems, saleItems.unitName);
           await m.addColumn(saleItems, saleItems.conversionFactor);
+        }
+        if (from < 10) {
+          await m.createTable(customFieldDefinitions);
+          await m.createTable(customFieldValues);
+          await m.addColumn(saleItems, saleItems.customFieldsJson);
         }
       },
     );

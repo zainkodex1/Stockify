@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../data/repositories/shop_repository.dart';
+import '../../data/services/business_preset_service.dart';
 import 'owner_login_screen.dart';
 
 class ShopRegistrationScreen extends ConsumerStatefulWidget {
@@ -84,6 +85,9 @@ class _ShopRegistrationScreenState extends ConsumerState<ShopRegistrationScreen>
          gstRate: double.tryParse(_gstRateController.text) ?? 0,
          posFee: double.tryParse(_posFeeController.text) ?? 0,
       );
+
+      // Apply matching local preset settings immediately after registration
+      await ref.read(businessPresetServiceProvider).applyPresetFromBusinessType(businessType);
 
       if (!mounted) return;
 
